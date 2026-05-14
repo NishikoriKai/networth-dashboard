@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>資產儀表板</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ── TOKENS ── */
+:root {
+  --bg:#080810;--bg2:#0d0d18;--bg3:#12121f;
+  --glass:rgba(255,255,255,.043);--glass2:rgba(255,255,255,.072);--glass3:rgba(255,255,255,.10);
+  --rim:rgba(255,255,255,.08);--rim2:rgba(255,255,255,.14);--rim3:rgba(255,255,255,.22);
+  --ink:#eeeef5;--ink2:rgba(238,238,245,.52);--ink3:rgba(238,238,245,.28);--ink4:rgba(238,238,245,.10);
+  --blue:#4fa3ff;--blue2:rgba(79,163,255,.18);--blue3:rgba(79,163,255,.10);
+  --violet:#9b8cff;--teal:#36d9b8;--gold:#f5c842;--coral:#ff6b6b;
+  --green:#3ecf8e;--green2:rgba(62,207,142,.13);--red2:rgba(255,107,107,.13);
+  --r:20px;--r2:14px;--r3:10px;
+  --ease:cubic-bezier(.4,0,.2,1);
+}
+.L {
+  --bg:#f0f0f7;--bg2:#e8e8f2;--bg3:#fff;
+  --glass:rgba(255,255,255,.72);--glass2:rgba(255,255,255,.88);--glass3:rgba(0,0,0,.05);
+  --rim:rgba(0,0,0,.07);--rim2:rgba(0,0,0,.12);--rim3:rgba(0,0,0,.18);
+  --ink:#16161e;--ink2:rgba(22,22,30,.52);--ink3:rgba(22,22,30,.28);--ink4:rgba(22,22,30,.08);
+  --blue2:rgba(60,140,255,.12);--blue3:rgba(60,140,255,.07);
+  --green2:rgba(30,160,100,.10);--red2:rgba(200,50,50,.10);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px}
+body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden;transition:background .35s,color .35s}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse 60% 40% at 18% 8%,rgba(79,163,255,.07),transparent 68%),radial-gradient(ellipse 45% 35% at 82% 82%,rgba(155,140,255,.055),transparent 68%);z-index:0}
+body>*{position:relative;z-index:1}
+
+/* ── LOGIN ── */
+#loginScreen{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:var(--bg);transition:opacity .5s}
+.lc{background:var(--glass);border:1px solid var(--rim2);border-radius:28px;padding:44px 36px 36px;text-align:center;backdrop-filter:blur(24px);box-shadow:0 0 0 1px rgba(255,255,255,.04) inset,0 32px 64px rgba(0,0,0,.45);width:330px;animation:lup .7s cubic-bezier(.22,1,.36,1) both}
+@keyframes lup{from{opacity:0;transform:translateY(22px) scale(.97)}to{opacity:1;transform:none}}
+.lc-icon{width:60px;height:60px;background:linear-gradient(145deg,#1a2a4a,#0d1a33);border:1px solid rgba(79,163,255,.35);border-radius:17px;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 24px rgba(79,163,255,.18),inset 0 1px 0 rgba(255,255,255,.10)}
+.lc-icon svg{width:26px;height:26px}
+.lc-h{font-family:'DM Serif Display',serif;font-size:21px;margin-bottom:4px}
+.lc-s{font-size:12.5px;color:var(--ink2);margin-bottom:28px;font-weight:300}
+.pin-row{display:flex;gap:12px;justify-content:center;margin-bottom:26px}
+.pd{width:11px;height:11px;border-radius:50%;border:1.5px solid var(--rim2);transition:all .16s}
+.pd.on{background:var(--blue);border-color:var(--blue);box-shadow:0 0 7px var(--blue);transform:scale(1.1)}
+.pd.err{background:var(--coral);border-color:var(--coral);animation:shake .35s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}60%{transform:translateX(5px)}}
+.np{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.nb{background:var(--glass);border:1px solid var(--rim);border-radius:13px;padding:14px 8px;font-family:'DM Serif Display',serif;font-size:21px;color:var(--ink);cursor:pointer;transition:all .13s;user-select:none}
+.nb:hover{background:var(--glass2);border-color:var(--rim2);transform:scale(.97)}
+.nb:active{transform:scale(.91)}
+.nb.sm{grid-column:span 2;font-family:'DM Sans',sans-serif;font-size:12.5px;color:var(--ink2);font-weight:500}
+.nb.ok{background:linear-gradient(135deg,rgba(79,163,255,.25),rgba(79,163,255,.12));border-color:rgba(79,163,255,.4);color:var(--blue);font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:600}
+.lc-err{font-size:12px;color:var(--coral);margin-top:10px;min-height:18px;transition:opacity .2s}
+
+/* ── LOADING ── */
+#loadingScreen{position:fixed;inset:0;z-index:150;display:none;align-items:center;justify-content:center;background:var(--bg);flex-direction:column;gap:16px}
+.spinner{width:36px;height:36px;border:2px solid var(--rim2);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{font-size:13px;color:var(--ink2)}
+
+/* ── TOPBAR ── */
+#app{display:none}
+.topbar{display:flex;align-items:center;padding:0 26px;height:56px;background:rgba(8,8,16,.75);border-bottom:1px solid var(--rim);backdrop-filter:blur(20px);position:sticky;top:0;z-index:50}
+.L .topbar{background:rgba(240,240,247,.82)}
+.brand{font-family:'DM Serif Display',serif;font-size:16px;letter-spacing:-.2px;display:flex;align-items:center;gap:8px}
+.bdot{width:7px;height:7px;border-radius:50%;background:var(--blue);box-shadow:0 0 7px var(--blue)}
+.tc{flex:1;display:flex;justify-content:center}
+.mnav{display:flex;align-items:center;gap:10px;background:var(--glass);border:1px solid var(--rim);border-radius:22px;padding:5px 14px;font-size:12.5px;font-weight:500}
+.mnav button{background:none;border:none;color:var(--ink2);cursor:pointer;font-size:15px;transition:color .2s}
+.mnav button:hover{color:var(--ink)}
+.mnav span{min-width:84px;text-align:center}
+.tr2{display:flex;gap:7px;align-items:center}
+.tbtn{background:var(--glass);border:1px solid var(--rim);border-radius:19px;padding:5px 13px;font-size:12px;font-weight:500;color:var(--ink2);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px}
+.tbtn:hover{background:var(--glass2);border-color:var(--rim2);color:var(--ink)}
+.tbtn.pri{background:linear-gradient(135deg,rgba(79,163,255,.28),rgba(79,163,255,.13));border-color:rgba(79,163,255,.42);color:var(--blue)}
+.tbtn.pri:hover{background:linear-gradient(135deg,rgba(79,163,255,.38),rgba(79,163,255,.22))}
+
+/* ── CURRENCY STRIP ── */
+.cstrip{display:flex;align-items:center;gap:6px;padding:13px 26px 0}
+.cpill{padding:4px 13px;border-radius:15px;font-size:11.5px;font-weight:500;border:1px solid var(--rim);color:var(--ink2);background:transparent;cursor:pointer;transition:all .2s}
+.cpill.on{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 0 10px rgba(79,163,255,.28)}
+.rbadge{margin-left:auto;font-size:11px;color:var(--ink3);display:flex;align-items:center;gap:5px}
+.rdot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ── MAIN GRID ── */
+main{padding:18px 26px 48px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;max-width:1200px;margin:0 auto}
+
+/* ── CARD ── */
+.card{background:var(--glass);border:1px solid var(--rim);border-radius:var(--r);backdrop-filter:blur(20px);position:relative;overflow:hidden;transition:border-color .22s;animation:fadeUp .5s cubic-bezier(.22,1,.36,1) both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 5%,var(--rim2) 50%,transparent 95%);pointer-events:none}
+.card:hover{border-color:var(--rim2)}
+.card:nth-child(1){animation-delay:.05s}.card:nth-child(2){animation-delay:.09s}.card:nth-child(3){animation-delay:.12s}.card:nth-child(4){animation-delay:.15s}.card:nth-child(5){animation-delay:.18s}.card:nth-child(6){animation-delay:.21s}.card:nth-child(7){animation-delay:.24s}.card:nth-child(8){animation-delay:.27s}.card:nth-child(9){animation-delay:.30s}
+
+/* ── HERO ── */
+.c-hero{grid-column:span 2;padding:26px 28px 22px;background:linear-gradient(145deg,rgba(79,163,255,.07),transparent 55%),var(--glass);border-color:rgba(79,163,255,.18);box-shadow:0 0 40px rgba(79,163,255,.04)}
+.c-hero::after{content:'';position:absolute;bottom:0;right:0;width:160px;height:160px;background:radial-gradient(circle,rgba(79,163,255,.07),transparent 70%);pointer-events:none}
+.h-lbl{font-size:11px;font-weight:500;letter-spacing:.8px;text-transform:uppercase;color:var(--ink3);margin-bottom:9px}
+.h-val{font-family:'DM Serif Display',serif;font-size:44px;letter-spacing:-2px;line-height:1;margin-bottom:5px;background:linear-gradient(135deg,#eeeef5,#8ab8f0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.L .h-val{background:linear-gradient(135deg,#16161e,#2a5a9a);-webkit-background-clip:text;background-clip:text}
+.h-sub{font-size:12.5px;color:var(--ink2);margin-bottom:16px}
+.h-badge{display:inline-flex;align-items:center;gap:4px;padding:5px 11px;border-radius:9px;font-size:12.5px;font-weight:600}
+.up{background:var(--green2);color:var(--green);border:1px solid rgba(62,207,142,.18)}
+.dn{background:var(--red2);color:var(--coral);border:1px solid rgba(255,107,107,.18)}
+
+/* ── STAT ── */
+.c-stat{padding:20px 20px 18px}
+.s-lbl{font-size:10.5px;font-weight:500;letter-spacing:.7px;text-transform:uppercase;color:var(--ink3);margin-bottom:9px;display:flex;align-items:center;gap:6px}
+.s-ico{width:20px;height:20px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px}
+.s-num{font-family:'DM Serif Display',serif;font-size:26px;letter-spacing:-1px;line-height:1;margin-bottom:7px}
+.s-chg{display:inline-flex;align-items:center;gap:3px;font-size:11.5px;font-weight:600;padding:3px 7px;border-radius:6px}
+
+/* ── TREND ── */
+.c-trend{grid-column:span 3;padding:22px 24px 16px}
+.c-title{font-size:11px;font-weight:500;letter-spacing:.65px;text-transform:uppercase;color:var(--ink3);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.ttabs{display:flex;gap:5px}
+.ttab{padding:3px 9px;border-radius:7px;font-size:11px;cursor:pointer;background:transparent;border:1px solid var(--rim);color:var(--ink3);transition:all .2s}
+.ttab.on{background:var(--glass2);border-color:var(--rim2);color:var(--ink)}
+
+/* ── ALLOC ── */
+.c-alloc{padding:22px 20px}
+.donut-w{position:relative;width:120px;height:120px;margin:0 auto 16px}
+.donut-w canvas{position:absolute;top:0;left:0}
+.dctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+.dctr-n{font-family:'DM Serif Display',serif;font-size:19px}
+.dctr-s{font-size:10px;color:var(--ink3)}
+.ar{display:flex;flex-direction:column;gap:9px}
+.ar-row{display:flex;align-items:center;gap:9px}
+.ar-sw{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.ar-nm{font-size:12px;color:var(--ink2);flex:1}
+.ar-vl{font-size:12px;font-weight:600}
+.ar-pt{font-size:11px;color:var(--ink3);min-width:30px;text-align:right}
+
+/* ── TABLE ── */
+.c-table{grid-column:span 4;padding:22px 24px}
+table{width:100%;border-collapse:collapse}
+thead th{font-size:10px;font-weight:500;letter-spacing:.6px;text-transform:uppercase;color:var(--ink3);padding:0 12px 10px;border-bottom:1px solid var(--rim)}
+thead th:not(:first-child){text-align:right}
+.tr-cat td{padding:12px 12px 11px;border-bottom:1px solid var(--ink4);cursor:pointer;transition:background .18s}
+.tr-cat:hover td{background:var(--glass2)}
+.tr-cat td:not(:first-child){text-align:right}
+.cat-name{display:flex;align-items:center;gap:11px;font-weight:600;font-size:13.5px}
+.cat-chip{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.cat-sub-txt{font-size:11px;color:var(--ink3);font-weight:400;margin-top:1px}
+.expand-arrow{margin-left:auto;font-size:11px;color:var(--ink3);transition:transform .22s;display:inline-block}
+.expanded .expand-arrow{transform:rotate(90deg)}
+.tr-sub{display:none}
+.tr-sub.show{display:table-row}
+.tr-sub td{padding:7px 12px 7px 55px;border-bottom:1px solid rgba(255,255,255,.03);font-size:12.5px;color:var(--ink2)}
+.tr-sub td:not(:first-child){text-align:right}
+.sub-name-wrap{display:flex;align-items:center;gap:7px}
+.sub-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.td-chg{font-weight:600}
+.td-chg.up{color:var(--green)}.td-chg.dn{color:var(--coral)}
+.mini-bar{display:inline-flex;align-items:center;gap:7px;justify-content:flex-end}
+.mbar{width:48px;height:3px;border-radius:2px;background:var(--glass3);overflow:hidden}
+.mfill{height:100%;border-radius:2px}
+
+/* ── GOAL ── */
+.c-goal{grid-column:span 2;padding:22px 20px}
+.g-track{position:relative;height:7px;border-radius:4px;background:var(--glass3);margin:12px 0 8px;overflow:visible}
+.g-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--blue),var(--violet));box-shadow:0 0 9px rgba(79,163,255,.38);transition:width .8s cubic-bezier(.22,1,.36,1);position:relative}
+.g-fill::after{content:'';position:absolute;right:-4px;top:-4px;width:15px;height:15px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 3px var(--bg),0 0 9px var(--blue)}
+.L .g-fill::after{box-shadow:0 0 0 3px var(--bg3),0 0 9px var(--blue)}
+.g-lbls{display:flex;justify-content:space-between;font-size:11px;color:var(--ink3)}
+.g-chips{display:flex;gap:7px;margin-top:14px;flex-wrap:wrap}
+.gchip{padding:4px 9px;border-radius:7px;font-size:11px;border:1px solid var(--rim);color:var(--ink2)}
+.gchip.done{border-color:rgba(62,207,142,.28);color:var(--green);background:var(--green2)}
+
+/* ── LOG ── */
+.c-log{grid-column:span 2;padding:22px 20px}
+.log-scroll{max-height:190px;overflow-y:auto;margin-top:4px}
+.log-scroll::-webkit-scrollbar{width:3px}
+.log-scroll::-webkit-scrollbar-thumb{background:var(--rim2);border-radius:2px}
+.li{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--ink4);font-size:12px}
+.li:last-child{border:none}
+.ll{width:2px;height:26px;border-radius:1px;flex-shrink:0}
+.lm{flex:1;color:var(--ink2);line-height:1.4}
+.lt{font-size:10.5px;color:var(--ink3);white-space:nowrap}
+
+/* ── EMPTY STATE ── */
+.empty-state{grid-column:span 4;padding:60px 24px;text-align:center}
+.empty-icon{font-size:48px;margin-bottom:16px}
+.empty-h{font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:8px}
+.empty-s{font-size:13px;color:var(--ink2);margin-bottom:24px}
+.empty-btn{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,rgba(79,163,255,.28),rgba(79,163,255,.13));border:1px solid rgba(79,163,255,.42);border-radius:14px;padding:11px 22px;font-size:13px;font-weight:600;color:var(--blue);cursor:pointer;transition:all .2s}
+.empty-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(79,163,255,.2)}
+
+/* ── MODAL ── */
+.overlay{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.58);backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .28s}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--bg3);border:1px solid var(--rim2);border-radius:26px;padding:0;width:580px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;transform:translateY(16px) scale(.985);transition:transform .28s cubic-bezier(.22,1,.36,1);box-shadow:0 40px 80px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.04) inset}
+.overlay.open .modal{transform:none}
+.m-tabs{display:flex;border-bottom:1px solid var(--rim);padding:0 24px;flex-shrink:0}
+.m-tab{padding:16px 14px 14px;font-size:12.5px;font-weight:500;color:var(--ink3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;display:flex;align-items:center;gap:6px}
+.m-tab.on{color:var(--blue);border-bottom-color:var(--blue)}
+.m-body{padding:24px;overflow-y:auto;flex:1}
+.m-body::-webkit-scrollbar{width:3px}
+.m-body::-webkit-scrollbar-thumb{background:var(--rim2);border-radius:2px}
+.paste-hint{font-size:11.5px;color:var(--ink3);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.paste-area{width:100%;min-height:100px;background:var(--glass3);border:1px solid var(--rim);border-radius:var(--r2);padding:13px 15px;font-size:13px;color:var(--ink);font-family:'DM Sans',sans-serif;resize:vertical;outline:none;transition:border-color .2s,box-shadow .2s;line-height:1.6;margin-bottom:12px}
+.paste-area::placeholder{color:var(--ink3)}
+.paste-area:focus{border-color:rgba(79,163,255,.45);box-shadow:0 0 0 3px rgba(79,163,255,.09)}
+.ai-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:linear-gradient(135deg,rgba(79,163,255,.22),rgba(155,140,255,.15));border:1px solid rgba(79,163,255,.35);border-radius:var(--r2);padding:12px;font-size:13px;font-weight:600;color:var(--blue);cursor:pointer;transition:all .2s;margin-bottom:16px}
+.ai-btn:hover{background:linear-gradient(135deg,rgba(79,163,255,.32),rgba(155,140,255,.22));transform:translateY(-1px);box-shadow:0 6px 18px rgba(79,163,255,.18)}
+.ai-btn:disabled{opacity:.5;pointer-events:none}
+.parsed-title{font-size:11px;font-weight:500;letter-spacing:.65px;text-transform:uppercase;color:var(--ink3);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.parsed-list{display:flex;flex-direction:column;gap:7px;margin-bottom:12px}
+.parsed-item{background:var(--glass);border:1px solid var(--rim);border-radius:var(--r2);padding:11px 14px;display:flex;align-items:center;gap:12px;transition:border-color .2s}
+.pi-icon{font-size:16px;flex-shrink:0}
+.pi-info{flex:1;min-width:0}
+.pi-name{font-size:13px;font-weight:500}
+.pi-cat{font-size:11px;margin-top:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.pi-badge{padding:2px 7px;border-radius:5px;font-size:10.5px;font-weight:600}
+.pi-amt{font-family:'DM Serif Display',serif;font-size:15px;white-space:nowrap;margin-right:6px}
+.pi-actions{display:flex;gap:5px;flex-shrink:0}
+.pi-btn{background:var(--glass2);border:1px solid var(--rim);border-radius:7px;padding:4px 8px;font-size:11px;color:var(--ink2);cursor:pointer;transition:all .18s}
+.pi-btn:hover{border-color:var(--rim2);color:var(--ink)}
+.cat-select{background:var(--bg2);border:1px solid var(--rim);border-radius:8px;padding:6px 10px;font-size:12px;color:var(--ink);font-family:'DM Sans',sans-serif;outline:none;cursor:pointer;margin-top:5px;width:100%}
+.memory-note{margin-top:10px;padding:9px 12px;background:var(--glass);border:1px solid var(--rim);border-radius:10px;font-size:11.5px;color:var(--ink2)}
+.img-drop{border:2px dashed var(--rim2);border-radius:var(--r2);padding:28px;text-align:center;cursor:pointer;transition:all .22s;background:var(--glass)}
+.img-drop:hover{border-color:rgba(79,163,255,.45);background:var(--blue3)}
+.img-drop-icon{font-size:28px;margin-bottom:8px}
+.img-drop-txt{font-size:13px;color:var(--ink2);margin-bottom:3px}
+.img-drop-sub{font-size:11.5px;color:var(--ink3)}
+#imgPrev{max-width:100%;border-radius:var(--r2);margin-top:12px;display:none}
+.date-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.fl{font-size:11.5px;color:var(--ink2);font-weight:500}
+.fi{background:var(--glass3);border:1px solid var(--rim);border-radius:9px;padding:9px 12px;font-size:13px;color:var(--ink);font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s,box-shadow .2s;width:100%}
+.fi::placeholder{color:var(--ink3)}
+.fi:focus{border-color:rgba(79,163,255,.45);box-shadow:0 0 0 3px rgba(79,163,255,.08)}
+.fsec{font-size:10.5px;font-weight:500;letter-spacing:.65px;text-transform:uppercase;color:var(--ink3);margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--ink4)}
+.fi-hint{font-size:11px;color:var(--ink3);margin-top:3px}
+.m-actions{display:flex;gap:8px;padding:16px 24px;border-top:1px solid var(--rim);flex-shrink:0;background:var(--bg3)}
+.btn{padding:11px 16px;border-radius:11px;font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s;border:none}
+.btn-g{flex:1;background:var(--glass);border:1px solid var(--rim);color:var(--ink2)}
+.btn-g:hover{background:var(--glass2)}
+.btn-p{flex:2;background:linear-gradient(135deg,#4fa3ff,#3d82d4);color:#fff;font-weight:600;box-shadow:0 4px 14px rgba(79,163,255,.28)}
+.btn-p:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(79,163,255,.38)}
+.btn-p:disabled{opacity:.5;pointer-events:none}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--bg2);border:1px solid var(--rim2);border-radius:12px;padding:10px 18px;font-size:13px;font-weight:500;z-index:500;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;max-width:90vw}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.err{border-color:rgba(255,107,107,.4);color:var(--coral)}
+
+@media(max-width:900px){
+  main{grid-template-columns:1fr 1fr;padding:12px 14px 40px}
+  .c-hero,.c-trend,.c-table,.c-log,.c-goal,.empty-state{grid-column:span 2}
+  .modal{width:calc(100vw - 24px)}
+}
+@media(max-width:600px){
+  main{grid-template-columns:1fr}
+  .c-hero,.c-trend,.c-table,.c-log,.c-goal,.c-stat,.c-alloc,.empty-state{grid-column:1}
+  .h-val{font-size:34px}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="lc">
+    <div class="lc-icon">
+      <svg viewBox="0 0 28 28" fill="none">
+        <path d="M14 3L4 8v12l10 5 10-5V8L14 3z" stroke="#4fa3ff" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M14 3v17M4 8l10 5 10-5" stroke="#4fa3ff" stroke-width="1.5" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="lc-h">資產儀表板</div>
+    <div class="lc-s">輸入 PIN 碼以繼續</div>
+    <div class="pin-row">
+      <div class="pd" id="p0"></div><div class="pd" id="p1"></div>
+      <div class="pd" id="p2"></div><div class="pd" id="p3"></div>
+    </div>
+    <div class="np">
+      <button class="nb" onclick="np('1')">1</button>
+      <button class="nb" onclick="np('2')">2</button>
+      <button class="nb" onclick="np('3')">3</button>
+      <button class="nb" onclick="np('4')">4</button>
+      <button class="nb" onclick="np('5')">5</button>
+      <button class="nb" onclick="np('6')">6</button>
+      <button class="nb" onclick="np('7')">7</button>
+      <button class="nb" onclick="np('8')">8</button>
+      <button class="nb" onclick="np('9')">9</button>
+      <button class="nb sm" onclick="npD()">⌫ 清除</button>
+      <button class="nb" onclick="np('0')">0</button>
+      <button class="nb ok" onclick="npS()">確認 →</button>
+    </div>
+    <div class="lc-err" id="lcErr"></div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="loadingScreen" style="display:none;position:fixed;inset:0;z-index:150;align-items:center;justify-content:center;background:var(--bg);flex-direction:column;gap:16px">
+  <div class="spinner"></div>
+  <div class="loading-txt" id="loadTxt">載入資料中…</div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header class="topbar">
+    <div class="brand"><div class="bdot"></div>NETWORTH</div>
+    <div class="tc">
+      <div class="mnav">
+        <button onclick="shiftMonth(-1)">‹</button>
+        <span id="mLbl">—</span>
+        <button onclick="shiftMonth(1)">›</button>
+      </div>
+    </div>
+    <div class="tr2">
+      <button class="tbtn" id="thBtn" onclick="toggleTheme()">🌙 深色</button>
+      <button class="tbtn pri" onclick="openModal()">＋ 新增記錄</button>
+    </div>
+  </header>
+
+  <div class="cstrip">
+    <button class="cpill on" onclick="setCur('twd',this)">TWD 台幣</button>
+    <button class="cpill" onclick="setCur('usd',this)">USD 美元</button>
+    <div class="rbadge"><div class="rdot"></div><span id="rLbl">載入匯率中…</span></div>
+  </div>
+
+  <main id="mainGrid"></main>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="ov" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="m-tabs">
+      <div class="m-tab on" onclick="switchTab(0,this)">✨ 智慧貼上</div>
+      <div class="m-tab" onclick="switchTab(1,this)">📷 圖片辨識</div>
+      <div class="m-tab" onclick="switchTab(2,this)">✏️ 手動輸入</div>
+    </div>
+
+    <!-- TAB 0: SMART PASTE -->
+    <div class="m-body" id="tab0">
+      <div class="date-row">
+        <div class="fg" style="margin:0"><label class="fl">年份</label><input class="fi" id="py" type="number" placeholder="2025"></div>
+        <div class="fg" style="margin:0"><label class="fl">月份</label><input class="fi" id="pm" type="number" placeholder="12" min="1" max="12"></div>
+      </div>
+      <div class="paste-hint" style="margin-top:12px">💡 貼上任意格式，AI 自動分類並記憶你的修正</div>
+      <textarea class="paste-area" id="pasteArea" placeholder="例：集保（台股）3471828、國泰複委託美元24312、元大台幣帳戶120000、元大美元帳戶6782、富邦帳戶77654
+
+或換行格式：
+集保 3471828
+國泰複委託 USD 24312
+元大活存 120,000"></textarea>
+      <button class="ai-btn" id="aiBtnPaste" onclick="runAIParse()">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M7.5 1v13M1 7.5h13" stroke-linecap="round"/></svg>
+        AI 智慧解析
+      </button>
+      <div id="parsedSection" style="display:none">
+        <div class="parsed-title">
+          <span>解析結果 — 確認分類是否正確</span>
+          <span id="parsedCount" style="color:var(--green);font-size:11.5px"></span>
+        </div>
+        <div class="parsed-list" id="parsedList"></div>
+        <div class="memory-note">💾 修正後的分類會自動記憶，下次相同關鍵字會直接歸類正確</div>
+      </div>
+    </div>
+
+    <!-- TAB 1: IMAGE -->
+    <div class="m-body" id="tab1" style="display:none">
+      <div class="date-row">
+        <div class="fg" style="margin:0"><label class="fl">年份</label><input class="fi" id="iy" type="number" placeholder="2025"></div>
+        <div class="fg" style="margin:0"><label class="fl">月份</label><input class="fi" id="im" type="number" placeholder="12" min="1" max="12"></div>
+      </div>
+      <div style="margin-top:12px">
+        <div class="img-drop" onclick="document.getElementById('imgFile').click()">
+          <div class="img-drop-icon">📸</div>
+          <div class="img-drop-txt">點擊或拖曳圖片至此</div>
+          <div class="img-drop-sub">支援截圖、相片</div>
+          <img id="imgPrev">
+        </div>
+        <input type="file" id="imgFile" accept="image/*" style="display:none" onchange="handleImg(this)">
+        <button class="ai-btn" id="aiBtnImg" style="margin-top:12px" onclick="runImgParse()">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M7.5 1v13M1 7.5h13" stroke-linecap="round"/></svg>
+          AI 圖片辨識
+        </button>
+        <div id="imgParsedSection" style="display:none">
+          <div class="parsed-title"><span>辨識結果</span><span id="imgParsedCount" style="color:var(--green);font-size:11.5px"></span></div>
+          <div class="parsed-list" id="imgParsedList"></div>
+          <div class="memory-note">💾 修正後的分類會自動記憶</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: MANUAL -->
+    <div class="m-body" id="tab2" style="display:none">
+      <div class="date-row">
+        <div class="fg" style="margin:0"><label class="fl">年份</label><input class="fi" id="my2" type="number" placeholder="2025"></div>
+        <div class="fg" style="margin:0"><label class="fl">月份</label><input class="fi" id="mm2" type="number" placeholder="12" min="1" max="12"></div>
+      </div>
+      <div class="fsec" style="margin-top:14px">台幣資產</div>
+      <div class="fg"><label class="fl">💵 現金 ／ 銀行存款（TWD）</label><input class="fi" id="m-cash" type="number" placeholder="0"></div>
+      <div class="fg"><label class="fl">📈 台股 ETF ／ 股票（TWD）</label><input class="fi" id="m-tw" type="number" placeholder="0"></div>
+      <div class="fg"><label class="fl">📊 基金（TWD）</label><input class="fi" id="m-fund" type="number" placeholder="0"></div>
+      <div class="fsec">美元資產（自動換算）</div>
+      <div class="fg"><label class="fl">🌐 美股 ETF ／ 股票（USD）</label><input class="fi" id="m-us" type="number" placeholder="0"><div class="fi-hint">輸入美元，系統依即時匯率換算</div></div>
+      <div class="fg"><label class="fl">₿ 加密貨幣（USD）</label><input class="fi" id="m-crypto" type="number" placeholder="0"></div>
+      <div class="fsec">負債</div>
+      <div class="fg"><label class="fl">🏦 負債總額（TWD）</label><input class="fi" id="m-debt" type="number" placeholder="0"></div>
+      <div class="fg"><label class="fl">備註（選填）</label><input class="fi" id="m-note" type="text" placeholder="例：本月加碼 VOO"></div>
+    </div>
+
+    <div class="m-actions">
+      <button class="btn btn-g" onclick="closeModal()">取消</button>
+      <button class="btn btn-p" id="saveBtn" onclick="saveRecord()">儲存記錄</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ════════════════════════════════════
+   CONFIG
+════════════════════════════════════ */
+const SUPABASE_URL = 'https://awpexkfersmaetzsgoik.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF3cGV4a2ZlcnNtYWV0enNnb2lrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NjMxMTcsImV4cCI6MjA5NDMzOTExN30.LJzPLYu-evBVH_XCRZfqVMW08Fnr2d9ktmT1yR3r4l8';
+const ANTHROPIC_KEY_STORE = 'nw_anthropic_key';
+const PIN_STORE = 'nw_pin';
+const DEFAULT_PIN = '1234'; // 首次使用的預設 PIN，登入後可在 localStorage 修改
+
+// 分類設定
+const CATS = [
+  { name:'現金 ／ 存款', icon:'💵', color:'#4fa3ff' },
+  { name:'台股 ETF',     icon:'📈', color:'#3ecf8e' },
+  { name:'美股 ETF',     icon:'🌐', color:'#9b8cff' },
+  { name:'基金',         icon:'📊', color:'#f5c842' },
+  { name:'加密貨幣',     icon:'₿',  color:'#f97316' },
+  { name:'負債',         icon:'🏦', color:'#ff6b6b' },
+];
+const RETIREMENT_GOAL = 30000000;
+
+/* ════════════════════════════════════
+   SUPABASE INIT
+════════════════════════════════════ */
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ════════════════════════════════════
+   STATE
+════════════════════════════════════ */
+let FX = 32.0;
+let curMode = 'twd';
+let light = false;
+let allExpanded = false;
+let currentMonth = null; // { year, month }
+let availableMonths = [];
+let currentData = null; // { record, items }
+let parsedItems = []; // for smart paste
+let imgParsedItems = [];
+let imgBase64 = null;
+let activeTab = 0;
+let tChart = null, dChart = null;
+let rules = {}; // keyword → {category, currency}
+
+/* ════════════════════════════════════
+   PIN
+════════════════════════════════════ */
+let pin = '';
+function getCorrectPin(){ return localStorage.getItem(PIN_STORE) || DEFAULT_PIN; }
+function np(d){ if(pin.length>=4)return; pin+=d; updDots(); if(pin.length===4)setTimeout(npS,120); }
+function npD(){ pin=pin.slice(0,-1); updDots(); }
+function updDots(err){
+  for(let i=0;i<4;i++){
+    const e=document.getElementById('p'+i);
+    e.className='pd'+(i<pin.length?' on':'')+(err?' err':'');
+  }
+}
+function npS(){
+  if(pin===getCorrectPin()){
+    document.getElementById('loginScreen').style.opacity='0';
+    document.getElementById('loginScreen').style.pointerEvents='none';
+    setTimeout(()=>{
+      document.getElementById('loginScreen').style.display='none';
+      initApp();
+    },500);
+  } else {
+    updDots(true);
+    document.getElementById('lcErr').textContent='PIN 碼錯誤，請再試一次';
+    setTimeout(()=>{ pin=''; updDots(); document.getElementById('lcErr').textContent=''; },800);
+  }
+}
+document.addEventListener('keydown',e=>{
+  const ls=document.getElementById('loginScreen');
+  if(ls.style.display==='none'||ls.style.opacity==='0')return;
+  if(e.key>='0'&&e.key<='9')np(e.key);
+  if(e.key==='Backspace')npD();
+  if(e.key==='Enter')npS();
+});
+
+/* ════════════════════════════════════
+   INIT APP
+════════════════════════════════════ */
+async function initApp(){
+  showLoading('載入資料中…');
+  document.getElementById('app').style.display='block';
+  await Promise.all([fetchFX(), loadRules()]);
+  await loadAvailableMonths();
+  hideLoading();
+}
+
+/* ════════════════════════════════════
+   FX RATE
+════════════════════════════════════ */
+async function fetchFX(){
+  try {
+    // 使用免費的匯率 API
+    const r = await fetch('https://open.er-api.com/v6/latest/USD');
+    const d = await r.json();
+    if(d.rates && d.rates.TWD){ FX = d.rates.TWD; }
+  } catch(e){ FX = 32.0; }
+  document.getElementById('rLbl').textContent=`1 USD = ${FX.toFixed(2)} TWD（即時）`;
+}
+
+/* ════════════════════════════════════
+   LOAD RULES
+════════════════════════════════════ */
+async function loadRules(){
+  const { data } = await db.from('classification_rules').select('*');
+  if(data) data.forEach(r=>{ rules[r.keyword.toLowerCase()] = { category:r.category, currency:r.currency }; });
+}
+
+/* ════════════════════════════════════
+   LOAD MONTHS
+════════════════════════════════════ */
+async function loadAvailableMonths(){
+  const { data } = await db.from('monthly_records').select('id,year,month').order('year',{ascending:false}).order('month',{ascending:false});
+  availableMonths = data || [];
+  if(availableMonths.length > 0){
+    currentMonth = { year: availableMonths[0].year, month: availableMonths[0].month };
+    await loadMonthData();
+  } else {
+    currentMonth = { year: new Date().getFullYear(), month: new Date().getMonth()+1 };
+    updateMonthLabel();
+    renderEmpty();
+  }
+}
+
+/* ════════════════════════════════════
+   LOAD MONTH DATA
+════════════════════════════════════ */
+async function loadMonthData(){
+  showLoading('載入資料中…');
+  updateMonthLabel();
+  const { data: rec } = await db.from('monthly_records')
+    .select('*')
+    .eq('year', currentMonth.year)
+    .eq('month', currentMonth.month)
+    .maybeSingle();
+
+  if(!rec){ currentData=null; renderEmpty(); hideLoading(); return; }
+
+  const { data: items } = await db.from('asset_items')
+    .select('*')
+    .eq('record_id', rec.id)
+    .order('category');
+
+  currentData = { record: rec, items: items||[] };
+  await loadPrevMonthData();
+  hideLoading();
+}
+
+async function loadPrevMonthData(){
+  let py = currentMonth.year, pm = currentMonth.month-1;
+  if(pm<1){pm=12;py--;}
+  const { data: pr } = await db.from('monthly_records').select('*').eq('year',py).eq('month',pm).maybeSingle();
+  if(pr){
+    const { data: pi } = await db.from('asset_items').select('*').eq('record_id',pr.id);
+    currentData.prevItems = pi||[];
+    currentData.prevRecord = pr;
+  } else { currentData.prevItems=[]; currentData.prevRecord=null; }
+  renderDashboard();
+}
+
+/* ════════════════════════════════════
+   RENDER EMPTY
+════════════════════════════════════ */
+function renderEmpty(){
+  const g=document.getElementById('mainGrid');
+  g.innerHTML=`
+    <div class="card empty-state">
+      <div class="empty-icon">📊</div>
+      <div class="empty-h">尚無 ${currentMonth.year} 年 ${currentMonth.month} 月的資料</div>
+      <div class="empty-s">點擊下方按鈕新增本月資產記錄</div>
+      <button class="empty-btn" onclick="openModal()">＋ 新增記錄</button>
+    </div>`;
+  if(tChart){tChart.destroy();tChart=null;}
+  if(dChart){dChart.destroy();dChart=null;}
+}
+
+/* ════════════════════════════════════
+   RENDER DASHBOARD
+════════════════════════════════════ */
+function renderDashboard(){
+  const { record, items, prevItems=[], prevRecord } = currentData;
+  const FXr = record.usd_rate;
+
+  // 計算各類別加總
+  const catTotals = {};
+  const catSubs = {};
+  CATS.forEach(c=>{ catTotals[c.name]=0; catSubs[c.name]=[]; });
+  items.forEach(it=>{
+    if(catTotals[it.category]===undefined){catTotals[it.category]=0;catSubs[it.category]=[];}
+    catTotals[it.category]+=it.amount_twd;
+    catSubs[it.category].push(it);
+  });
+
+  const prevCatTotals = {};
+  CATS.forEach(c=>prevCatTotals[c.name]=0);
+  prevItems.forEach(it=>{ if(prevCatTotals[it.category]!==undefined)prevCatTotals[it.category]+=it.amount_twd; });
+
+  const totalAssets = items.filter(i=>i.category!=='負債').reduce((s,i)=>s+i.amount_twd,0);
+  const totalDebt = items.filter(i=>i.category==='負債').reduce((s,i)=>s+i.amount_twd,0);
+  const netWorth = totalAssets - totalDebt;
+  const prevNet = prevRecord
+    ? prevItems.filter(i=>i.category!=='負債').reduce((s,i)=>s+i.amount_twd,0)
+      - prevItems.filter(i=>i.category==='負債').reduce((s,i)=>s+i.amount_twd,0)
+    : null;
+  const netChg = prevNet!==null ? netWorth-prevNet : null;
+  const netChgPct = prevNet ? ((netChg/prevNet)*100).toFixed(1) : null;
+
+  function fmt(n){
+    if(curMode==='usd') return 'USD '+Math.round(n/FX).toLocaleString();
+    return '$'+Math.round(n).toLocaleString();
+  }
+
+  const goalPct = Math.min(100,(netWorth/RETIREMENT_GOAL*100));
+
+  // Build grid HTML
+  const g=document.getElementById('mainGrid');
+  const badgeHtml = netChg!==null
+    ? `<div class="h-badge ${netChg>=0?'up':'dn'}">${netChg>=0?'▲':'▼'} ${Math.abs(Math.round(netChg)).toLocaleString()} ／ ${netChg>=0?'+':''}${netChgPct}% 本月</div>`
+    : `<div class="h-badge up">首筆記錄</div>`;
+
+  const prevNet2 = prevRecord ? prevItems.filter(i=>i.category!=='負債').reduce((s,i)=>s+i.amount_twd,0) - prevItems.filter(i=>i.category==='負債').reduce((s,i)=>s+i.amount_twd,0) : null;
+  const prevTotal = prevRecord ? prevItems.filter(i=>i.category!=='負債').reduce((s,i)=>s+i.amount_twd,0) : null;
+  const prevDebt = prevRecord ? prevItems.filter(i=>i.category==='負債').reduce((s,i)=>s+i.amount_twd,0) : null;
+  const assetChg = prevTotal!==null ? totalAssets-prevTotal : null;
+  const debtChg = prevDebt!==null ? totalDebt-prevDebt : null;
+
+  g.innerHTML=`
+    <!-- HERO -->
+    <div class="card c-hero">
+      <div class="h-lbl">本月淨資產</div>
+      <div class="h-val">${fmt(netWorth)}</div>
+      <div class="h-sub">${curMode==='twd'?'≈ USD '+Math.round(netWorth/FX).toLocaleString():'≈ TWD '+Math.round(netWorth).toLocaleString()}</div>
+      ${badgeHtml}
+    </div>
+    <!-- STAT -->
+    <div class="card c-stat">
+      <div class="s-lbl"><div class="s-ico" style="background:rgba(79,163,255,.15)">📦</div>總資產</div>
+      <div class="s-num">${fmt(totalAssets)}</div>
+      ${assetChg!==null?`<div class="s-chg ${assetChg>=0?'up':'dn'}">${assetChg>=0?'▲':'▼'} ${Math.abs(Math.round(assetChg)).toLocaleString()}</div>`:'<div class="s-chg up">首筆</div>'}
+    </div>
+    <div class="card c-stat">
+      <div class="s-lbl"><div class="s-ico" style="background:rgba(255,107,107,.15)">📉</div>負債</div>
+      <div class="s-num" style="color:var(--coral)">${fmt(totalDebt)}</div>
+      ${debtChg!==null?`<div class="s-chg ${debtChg<=0?'up':'dn'}">${debtChg<=0?'▼ 減少 ':' ▲ 增加 '}${Math.abs(Math.round(debtChg)).toLocaleString()}</div>`:'<div class="s-chg up">首筆</div>'}
+    </div>
+    <!-- TREND -->
+    <div class="card c-trend">
+      <div class="c-title"><span>淨資產趨勢</span><div class="ttabs"><div class="ttab on">歷史</div></div></div>
+      <canvas id="tChart" height="155"></canvas>
+    </div>
+    <!-- ALLOC -->
+    <div class="card c-alloc">
+      <div class="c-title">配置比例</div>
+      <div class="donut-w">
+        <canvas id="dChart" width="120" height="120"></canvas>
+        <div class="dctr"><div class="dctr-n">${Object.values(catTotals).filter(v=>v>0).length}</div><div class="dctr-s">類別</div></div>
+      </div>
+      <div class="ar" id="arRows"></div>
+    </div>
+    <!-- TABLE -->
+    <div class="card c-table">
+      <div class="c-title" style="margin-bottom:14px">
+        <span>各類資產明細</span>
+        <span style="font-size:10.5px;color:var(--blue);cursor:pointer" onclick="toggleAll()">全部展開 ↕</span>
+      </div>
+      <table>
+        <thead><tr>
+          <th style="text-align:left">類別 ／ 子項目</th>
+          <th>本月</th><th>上月</th><th>變化</th><th>佔比</th>
+        </tr></thead>
+        <tbody id="aTbody"></tbody>
+      </table>
+    </div>
+    <!-- GOAL -->
+    <div class="card c-goal">
+      <div class="c-title">退休目標進度</div>
+      <div style="font-size:12px;color:var(--ink2);margin-top:3px">目標：TWD 30,000,000 ／ 50 歲前</div>
+      <div class="g-track"><div class="g-fill" style="width:${goalPct.toFixed(1)}%"></div></div>
+      <div class="g-lbls"><span>$0</span><span style="color:var(--blue);font-weight:600">${goalPct.toFixed(1)}% — $${(netWorth/10000).toFixed(0)}萬</span><span>$3000萬</span></div>
+      <div class="g-chips">
+        <div class="gchip ${netWorth>=5000000?'done':''}">5 百萬</div>
+        <div class="gchip ${netWorth>=10000000?'done':''}">1 千萬</div>
+        <div class="gchip ${netWorth>=15000000?'done':''}">1500 萬</div>
+        <div class="gchip ${netWorth>=20000000?'done':''}">2 千萬</div>
+        <div class="gchip ${netWorth>=30000000?'done':''}">3 千萬</div>
+      </div>
+    </div>
+    <!-- LOG -->
+    <div class="card c-log">
+      <div class="c-title">操作記錄</div>
+      <div class="log-scroll" id="logList"><div style="color:var(--ink3);font-size:12px;padding:12px 0">載入中…</div></div>
+    </div>
+  `;
+
+  // Alloc rows
+  const ar=document.getElementById('arRows');
+  const positiveCats = CATS.filter(c=>catTotals[c.name]>0);
+  positiveCats.forEach(c=>{
+    const pct=(catTotals[c.name]/totalAssets*100).toFixed(1);
+    ar.innerHTML+=`<div class="ar-row"><div class="ar-sw" style="background:${c.color}"></div><div class="ar-nm">${c.name}</div><div class="ar-vl" style="color:${c.color}">$${(catTotals[c.name]/10000).toFixed(0)}萬</div><div class="ar-pt">${pct}%</div></div>`;
+  });
+
+  // Table
+  renderTable(catTotals, catSubs, prevCatTotals, totalAssets);
+
+  // Charts
+  buildTrendChart();
+  buildDonutChart(catTotals, totalAssets);
+
+  // Log
+  loadLog();
+}
+
+/* ════════════════════════════════════
+   TABLE
+════════════════════════════════════ */
+function renderTable(catTotals, catSubs, prevCatTotals, totalAssets){
+  const tb=document.getElementById('aTbody');
+  if(!tb)return;
+  tb.innerHTML='';
+  CATS.forEach((c,ci)=>{
+    const cur=catTotals[c.name]||0;
+    const prev=prevCatTotals[c.name]||0;
+    const subs=catSubs[c.name]||[];
+    if(cur===0&&subs.length===0)return;
+    const chg=cur-prev;
+    const pct=totalAssets>0?(cur/totalAssets*100).toFixed(1):'0.0';
+    const tr=document.createElement('tr');
+    tr.className='tr-cat'; tr.id='cat'+ci;
+    tr.innerHTML=`
+      <td><div class="cat-name">
+        <div class="cat-chip" style="background:${c.color}1a">${c.icon}</div>
+        <div><div>${c.name}</div><div class="cat-sub-txt">${subs.length} 個子項目</div></div>
+        <span class="expand-arrow">›</span>
+      </div></td>
+      <td>$${Math.round(cur).toLocaleString()}</td>
+      <td style="color:var(--ink3)">$${Math.round(prev).toLocaleString()}</td>
+      <td class="td-chg ${chg>=0?'up':'dn'}">${chg>=0?'▲':'▼'} ${Math.abs(Math.round(chg)).toLocaleString()}</td>
+      <td><div class="mini-bar"><div class="mbar"><div class="mfill" style="width:${pct}%;background:${c.color}"></div></div><span style="font-size:11.5px;color:var(--ink2)">${pct}%</span></div></td>`;
+    tr.onclick=()=>toggleCat(ci, subs.length);
+    tb.appendChild(tr);
+    subs.forEach((s,si)=>{
+      const tr2=document.createElement('tr');
+      tr2.className='tr-sub'; tr2.id=`sub${ci}_${si}`;
+      tr2.innerHTML=`
+        <td><div class="sub-name-wrap"><div class="sub-dot" style="background:${c.color}99"></div>${s.name}</div></td>
+        <td>$${Math.round(s.amount_twd).toLocaleString()}</td>
+        <td style="color:var(--ink3)">${s.currency==='USD'?'USD '+s.amount_original.toLocaleString():'$'+s.amount_original.toLocaleString()}</td>
+        <td style="color:var(--ink3)">—</td>
+        <td style="color:var(--ink3);font-size:11.5px">${totalAssets>0?(s.amount_twd/totalAssets*100).toFixed(1):'0.0'}%</td>`;
+      tb.appendChild(tr2);
+    });
+  });
+}
+function toggleCat(ci, subCount){
+  const cat=document.getElementById('cat'+ci);
+  if(!cat)return;
+  const isEx=cat.classList.contains('expanded');
+  cat.classList.toggle('expanded',!isEx);
+  for(let si=0;si<subCount;si++){
+    const sub=document.getElementById(`sub${ci}_${si}`);
+    if(sub)sub.classList.toggle('show',!isEx);
+  }
+}
+function toggleAll(){
+  allExpanded=!allExpanded;
+  document.querySelectorAll('.tr-cat').forEach(cat=>cat.classList.toggle('expanded',allExpanded));
+  document.querySelectorAll('.tr-sub').forEach(sub=>sub.classList.toggle('show',allExpanded));
+  document.querySelector('[onclick="toggleAll()"]').textContent=allExpanded?'全部收合 ↕':'全部展開 ↕';
+}
+
+/* ════════════════════════════════════
+   CHARTS
+════════════════════════════════════ */
+async function buildTrendChart(){
+  if(tChart){tChart.destroy();tChart=null;}
+  const { data } = await db.from('monthly_records').select('year,month').order('year').order('month').limit(24);
+  if(!data||data.length===0)return;
+  // For each record, sum net worth
+  const labels=[], values=[];
+  for(const rec of data){
+    const { data:items } = await db.from('asset_items').select('amount_twd,category').eq('record_id',
+      (await db.from('monthly_records').select('id').eq('year',rec.year).eq('month',rec.month).maybeSingle()).data?.id
+    );
+    if(!items)continue;
+    const net = items.filter(i=>i.category!=='負債').reduce((s,i)=>s+i.amount_twd,0)
+              - items.filter(i=>i.category==='負債').reduce((s,i)=>s+i.amount_twd,0);
+    labels.push(`${rec.year}/${rec.month}`);
+    values.push(net);
+  }
+  const ctx=document.getElementById('tChart');
+  if(!ctx)return;
+  const c=ctx.getContext('2d');
+  const g=c.createLinearGradient(0,0,0,180);
+  g.addColorStop(0,'rgba(79,163,255,.2)');g.addColorStop(1,'rgba(79,163,255,0)');
+  tChart=new Chart(ctx,{type:'line',data:{labels,datasets:[{data:values,borderColor:'#4fa3ff',backgroundColor:g,borderWidth:2,pointRadius:4,pointBackgroundColor:'#4fa3ff',tension:.4,fill:true}]},
+    options:{responsive:true,plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(13,13,24,.9)',borderColor:'rgba(79,163,255,.3)',borderWidth:1,callbacks:{label:c=>' $'+Math.round(c.raw).toLocaleString()}}},
+    scales:{x:{grid:{color:gc()},ticks:{color:tc(),font:{size:11}}},y:{grid:{color:gc()},ticks:{color:tc(),font:{size:11},callback:v=>'$'+(v/1e6).toFixed(1)+'M'}}}}});
+}
+function buildDonutChart(catTotals, totalAssets){
+  if(dChart){dChart.destroy();dChart=null;}
+  const dc=document.getElementById('dChart');
+  if(!dc)return;
+  const positiveCats=CATS.filter(c=>catTotals[c.name]>0&&c.name!=='負債');
+  dChart=new Chart(dc,{type:'doughnut',
+    data:{labels:positiveCats.map(c=>c.name),datasets:[{data:positiveCats.map(c=>catTotals[c.name]),backgroundColor:positiveCats.map(c=>c.color+'cc'),borderWidth:0,hoverOffset:5}]},
+    options:{responsive:false,cutout:'67%',plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(13,13,24,.9)',callbacks:{label:c=>' $'+Math.round(c.raw).toLocaleString()}}}}});
+}
+function gc(){return light?'rgba(22,22,30,.07)':'rgba(255,255,255,.07)'}
+function tc(){return light?'rgba(22,22,30,.35)':'rgba(238,238,245,.35)'}
+
+/* ════════════════════════════════════
+   LOG
+════════════════════════════════════ */
+async function loadLog(){
+  const ll=document.getElementById('logList');
+  if(!ll)return;
+  const { data } = await db.from('activity_log').select('*').order('created_at',{ascending:false}).limit(20);
+  if(!data||data.length===0){ ll.innerHTML='<div style="color:var(--ink3);font-size:12px;padding:8px 0">尚無記錄</div>'; return; }
+  const colors={'新增':'var(--green)','修改':'var(--blue)','規則':'var(--violet)','刪除':'var(--coral)'};
+  ll.innerHTML=data.map(l=>{
+    const color=Object.entries(colors).find(([k])=>l.action.includes(k))?.[1]||'var(--ink3)';
+    const dt=new Date(l.created_at);
+    const ts=`${(dt.getMonth()+1).toString().padStart(2,'0')}-${dt.getDate().toString().padStart(2,'0')} ${dt.getHours().toString().padStart(2,'0')}:${dt.getMinutes().toString().padStart(2,'0')}`;
+    return `<div class="li"><div class="ll" style="background:${color}"></div><div class="lm">${l.action}${l.detail?'：'+l.detail:''}</div><div class="lt">${ts}</div></div>`;
+  }).join('');
+}
+async function addLog(action, detail=''){
+  await db.from('activity_log').insert({action,detail});
+}
+
+/* ════════════════════════════════════
+   MONTH NAV
+════════════════════════════════════ */
+function updateMonthLabel(){
+  document.getElementById('mLbl').textContent=`${currentMonth.year} 年 ${currentMonth.month} 月`;
+}
+async function shiftMonth(d){
+  let {year,month}=currentMonth;
+  month+=d;
+  if(month>12){month=1;year++;}
+  if(month<1){month=12;year--;}
+  currentMonth={year,month};
+  await loadMonthData();
+}
+
+/* ════════════════════════════════════
+   CURRENCY
+════════════════════════════════════ */
+function setCur(m,b){
+  curMode=m;
+  document.querySelectorAll('.cpill').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  if(currentData)renderDashboard();
+}
+
+/* ════════════════════════════════════
+   THEME
+════════════════════════════════════ */
+function toggleTheme(){
+  light=!light;
+  document.body.classList.toggle('L',light);
+  document.getElementById('thBtn').textContent=light?'☀️ 淺色':'🌙 深色';
+  if(tChart){ tChart.options.scales.x.grid.color=gc();tChart.options.scales.y.grid.color=gc();tChart.options.scales.x.ticks.color=tc();tChart.options.scales.y.ticks.color=tc();tChart.update(); }
+}
+
+/* ════════════════════════════════════
+   MODAL
+════════════════════════════════════ */
+function openModal(){
+  const y=new Date().getFullYear(), m=new Date().getMonth()+1;
+  ['py','pm','iy','im','my2','mm2'].forEach(id=>{ const el=document.getElementById(id); if(el)el.value=id.endsWith('y')||id==='my2'?y:m; });
+  document.getElementById('ov').classList.add('open');
+  parsedItems=[];imgParsedItems=[];imgBase64=null;
+  document.getElementById('parsedSection').style.display='none';
+  document.getElementById('pasteArea').value='';
+  const ips=document.getElementById('imgParsedSection');
+  if(ips)ips.style.display='none';
+  const ip=document.getElementById('imgPrev');
+  if(ip){ip.src='';ip.style.display='none';}
+}
+function closeModal(){ document.getElementById('ov').classList.remove('open'); }
+
+function switchTab(i,el){
+  ['tab0','tab1','tab2'].forEach((id,j)=>{
+    const t=document.getElementById(id);
+    if(t)t.style.display=j===i?'block':'none';
+  });
+  document.querySelectorAll('.m-tab').forEach((t,j)=>t.classList.toggle('on',j===i));
+  activeTab=i;
+}
+
+/* ════════════════════════════════════
+   AI PARSE — TEXT
+════════════════════════════════════ */
+async function runAIParse(){
+  const txt=document.getElementById('pasteArea').value.trim();
+  if(!txt){ showToast('請先貼上資產文字','err'); return; }
+  const btn=document.getElementById('aiBtnPaste');
+  btn.textContent='解析中…'; btn.disabled=true;
+
+  // 先用規則快速比對
+  const lines = txt.split(/[,，、\n]+/).map(s=>s.trim()).filter(Boolean);
+  const quickParsed = lines.map(line=>{
+    const numMatch = line.match(/[\d,，.]+/);
+    const amt = numMatch ? parseFloat(numMatch[0].replace(/[,，]/g,'')) : 0;
+    const name = line.replace(/[\d,，.]+/,'').replace(/USD|TWD/gi,'').trim();
+    const isUSD = /USD|美元|美金/i.test(line);
+    // 比對規則
+    let matchedCat = null, matchedCur = isUSD ? 'USD' : 'TWD';
+    for(const [kw,rule] of Object.entries(rules)){
+      if(name.toLowerCase().includes(kw)){ matchedCat=rule.category; matchedCur=rule.currency; break; }
+    }
+    return { name, amt, cat: matchedCat, cur: matchedCur, needsAI: !matchedCat };
+  }).filter(p=>p.amt>0);
+
+  // 對需要 AI 判斷的項目，呼叫 Claude API
+  const needAI = quickParsed.filter(p=>p.needsAI);
+  if(needAI.length > 0){
+    try {
+      const prompt = `你是台灣個人資產分類助手。請將以下資產項目分類到這些類別之一：「現金 ／ 存款」、「台股 ETF」、「美股 ETF」、「基金」、「加密貨幣」、「負債」。
+同時判斷貨幣是 TWD 還是 USD。
+請只回傳 JSON 陣列，格式：[{"name":"項目名稱","category":"分類","currency":"TWD或USD"}]
+項目：${needAI.map(p=>p.name).join('、')}`;
+      const resp = await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+      });
+      const data = await resp.json();
+      if(data.content&&data.content[0]){
+        const text=data.content[0].text;
+        const json=JSON.parse(text.replace(/```json|```/g,'').trim());
+        json.forEach((r,i)=>{ if(needAI[i]){ needAI[i].cat=r.category; needAI[i].cur=r.currency; } });
+      }
+    } catch(e){
+      // fallback: 猜測
+      needAI.forEach(p=>{
+        if(!p.cat){
+          if(/帳戶|存款|現金|活存/i.test(p.name))p.cat='現金 ／ 存款';
+          else if(/集保|台股|0050|0056/i.test(p.name))p.cat='台股 ETF';
+          else if(/美股|複委託|VOO|QQQ|SPY/i.test(p.name)){p.cat='美股 ETF';p.cur='USD';}
+          else if(/基金/i.test(p.name))p.cat='基金';
+          else if(/BTC|ETH|幣|crypto/i.test(p.name)){p.cat='加密貨幣';p.cur='USD';}
+          else if(/貸款|負債|房貸/i.test(p.name))p.cat='負債';
+          else p.cat='現金 ／ 存款';
+        }
+      });
+    }
+  }
+
+  parsedItems = quickParsed.map(p=>({ ...p, cat: p.cat||'現金 ／ 存款', confirmed:true }));
+  renderParsedItems(parsedItems, 'parsedList', 'parsedCount', 'parsedSection');
+  btn.innerHTML='<svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M7.5 1v13M1 7.5h13" stroke-linecap="round"/></svg> AI 智慧解析';
+  btn.disabled=false;
+}
+
+/* ════════════════════════════════════
+   AI PARSE — IMAGE
+════════════════════════════════════ */
+function handleImg(input){
+  if(!input.files[0])return;
+  const r=new FileReader();
+  r.onload=e=>{
+    imgBase64=e.target.result.split(',')[1];
+    const p=document.getElementById('imgPrev');
+    p.src=e.target.result; p.style.display='block';
+  };
+  r.readAsDataURL(input.files[0]);
+}
+async function runImgParse(){
+  if(!imgBase64){ showToast('請先上傳圖片','err'); return; }
+  const btn=document.getElementById('aiBtnImg');
+  btn.textContent='辨識中…'; btn.disabled=true;
+  try {
+    const prompt=`這是一張資產截圖。請擷取所有資產項目和金額，並分類到：「現金 ／ 存款」、「台股 ETF」、「美股 ETF」、「基金」、「加密貨幣」、「負債」。
+判斷每個項目的貨幣（TWD/USD）。只回傳 JSON 陣列：[{"name":"項目名","amount":數字,"category":"分類","currency":"TWD或USD"}]`;
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:[
+        {type:'image',source:{type:'base64',media_type:'image/jpeg',data:imgBase64}},
+        {type:'text',text:prompt}
+      ]}]})
+    });
+    const data=await resp.json();
+    if(data.content&&data.content[0]){
+      const text=data.content[0].text;
+      const json=JSON.parse(text.replace(/```json|```/g,'').trim());
+      imgParsedItems=json.map(r=>({name:r.name,amt:r.amount,cat:r.category,cur:r.currency,confirmed:true}));
+      renderParsedItems(imgParsedItems,'imgParsedList','imgParsedCount','imgParsedSection');
+    }
+  } catch(e){ showToast('辨識失敗，請確認 API Key 設定','err'); }
+  btn.innerHTML='<svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M7.5 1v13M1 7.5h13" stroke-linecap="round"/></svg> AI 圖片辨識';
+  btn.disabled=false;
+}
+
+/* ════════════════════════════════════
+   RENDER PARSED ITEMS
+════════════════════════════════════ */
+function renderParsedItems(items, listId, countId, sectionId){
+  const sec=document.getElementById(sectionId);
+  const list=document.getElementById(listId);
+  const count=document.getElementById(countId);
+  sec.style.display='block';
+  count.textContent=`✓ ${items.length} 筆`;
+  list.innerHTML='';
+  items.forEach((item,i)=>{
+    const cat=CATS.find(c=>c.name===item.cat)||CATS[0];
+    const div=document.createElement('div');
+    div.className='parsed-item'; div.id=`pi_${listId}_${i}`;
+    div.innerHTML=`
+      <div class="pi-icon">${cat.icon}</div>
+      <div class="pi-info">
+        <div class="pi-name">${item.name}</div>
+        <div class="pi-cat">
+          <span class="pi-badge" style="background:${cat.color}22;color:${cat.color}">${item.cat}</span>
+          <span style="color:var(--ink3)">${item.cur}</span>
+        </div>
+        <select class="cat-select" style="display:none" onchange="changeCat('${listId}',${i},this.value)">
+          ${CATS.map(c=>`<option value="${c.name}" ${c.name===item.cat?'selected':''}>${c.icon} ${c.name}</option>`).join('')}
+        </select>
+      </div>
+      <div class="pi-amt">$${item.amt.toLocaleString()}</div>
+      <div class="pi-actions">
+        <button class="pi-btn" onclick="toggleCatSelect('${listId}',${i})">改分類</button>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+function toggleCatSelect(listId,i){
+  const el=document.querySelector(`#pi_${listId}_${i} .cat-select`);
+  if(el)el.style.display=el.style.display==='none'?'block':'none';
+}
+async function changeCat(listId,i,newCat){
+  const arr=listId.includes('img')?imgParsedItems:parsedItems;
+  const oldName=arr[i].name;
+  arr[i].cat=newCat;
+  const cat=CATS.find(c=>c.name===newCat)||CATS[0];
+  // 更新 UI badge
+  const badge=document.querySelector(`#pi_${listId}_${i} .pi-badge`);
+  const icon=document.querySelector(`#pi_${listId}_${i} .pi-icon`);
+  if(badge){badge.textContent=newCat;badge.style.background=cat.color+'22';badge.style.color=cat.color;}
+  if(icon)icon.textContent=cat.icon;
+  // 記憶規則到 Supabase
+  const kw=oldName.toLowerCase().replace(/[\d\s$,]/g,'').slice(0,10);
+  if(kw){
+    await db.from('classification_rules').upsert({keyword:kw,category:newCat,currency:arr[i].cur},{onConflict:'keyword'});
+    rules[kw]={category:newCat,currency:arr[i].cur};
+    await addLog('規則',`「${kw}」→ ${newCat}`);
+    showToast(`已記憶：「${kw}」→ ${newCat}`);
+  }
+}
+
+/* ════════════════════════════════════
+   SAVE RECORD
+════════════════════════════════════ */
+async function saveRecord(){
+  const btn=document.getElementById('saveBtn');
+  btn.disabled=true; btn.textContent='儲存中…';
+
+  let year, month, itemsToSave=[];
+
+  if(activeTab===0){
+    year=parseInt(document.getElementById('py').value);
+    month=parseInt(document.getElementById('pm').value);
+    if(!parsedItems.length){ showToast('請先解析資產文字','err'); btn.disabled=false; btn.textContent='儲存記錄'; return; }
+    itemsToSave=parsedItems;
+  } else if(activeTab===1){
+    year=parseInt(document.getElementById('iy').value);
+    month=parseInt(document.getElementById('im').value);
+    if(!imgParsedItems.length){ showToast('請先辨識圖片','err'); btn.disabled=false; btn.textContent='儲存記錄'; return; }
+    itemsToSave=imgParsedItems;
+  } else {
+    year=parseInt(document.getElementById('my2').value);
+    month=parseInt(document.getElementById('mm2').value);
+    const fields=[
+      {id:'m-cash',cat:'現金 ／ 存款',cur:'TWD',name:'現金存款'},
+      {id:'m-tw',  cat:'台股 ETF',    cur:'TWD',name:'台股 ETF'},
+      {id:'m-fund',cat:'基金',        cur:'TWD',name:'基金'},
+      {id:'m-us',  cat:'美股 ETF',    cur:'USD',name:'美股 ETF'},
+      {id:'m-crypto',cat:'加密貨幣',  cur:'USD',name:'加密貨幣'},
+      {id:'m-debt',cat:'負債',        cur:'TWD',name:'負債'},
+    ];
+    fields.forEach(f=>{ const v=parseFloat(document.getElementById(f.id).value)||0; if(v>0)itemsToSave.push({name:f.name,amt:v,cat:f.cat,cur:f.cur}); });
+    if(!itemsToSave.length){ showToast('請至少輸入一個項目','err'); btn.disabled=false; btn.textContent='儲存記錄'; return; }
+  }
+
+  if(!year||!month||year<2000||month<1||month>12){ showToast('請填入正確的年份和月份','err'); btn.disabled=false; btn.textContent='儲存記錄'; return; }
+
+  try {
+    // Upsert monthly record
+    const { data: rec, error: recErr } = await db.from('monthly_records')
+      .upsert({year,month,usd_rate:FX,notes:document.getElementById('m-note')?.value||''},{onConflict:'year,month'})
+      .select().single();
+    if(recErr)throw recErr;
+
+    // Delete existing items for this month
+    await db.from('asset_items').delete().eq('record_id',rec.id);
+
+    // Insert new items
+    const rows=itemsToSave.map(it=>({
+      record_id:rec.id,
+      name:it.name,
+      category:it.cat,
+      amount_original:it.amt,
+      currency:it.cur,
+      amount_twd:it.cur==='USD'?Math.round(it.amt*FX):it.amt
+    }));
+    const { error: itemErr } = await db.from('asset_items').insert(rows);
+    if(itemErr)throw itemErr;
+
+    await addLog('新增',`${year}/${month} 月份記錄（${rows.length} 筆）`);
+    closeModal();
+    showToast(`✓ ${year}/${month} 記錄已儲存`);
+    currentMonth={year,month};
+    await loadAvailableMonths();
+  } catch(e){
+    showToast('儲存失敗：'+e.message,'err');
+  }
+  btn.disabled=false; btn.textContent='儲存記錄';
+}
+
+/* ════════════════════════════════════
+   UTILS
+════════════════════════════════════ */
+function showLoading(txt='載入中…'){
+  const s=document.getElementById('loadingScreen');
+  s.style.display='flex'; document.getElementById('loadTxt').textContent=txt;
+}
+function hideLoading(){ document.getElementById('loadingScreen').style.display='none'; }
+
+let toastTimer;
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show'+(type==='err'?' err':'');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),3000);
+}
+</script>
+</body>
+</html>

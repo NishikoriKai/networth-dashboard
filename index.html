@@ -462,10 +462,12 @@ const DEFAULT_CAT_ORDER=['現金 ／ 存款','台股 ETF','美股 ETF','基金',
 const BUILTIN=[
   {kw:/集保/,cat:'台股 ETF',cur:'TWD'},
   {kw:/台股|0050|0056|0100|tse/i,cat:'台股 ETF',cur:'TWD'},
+  {kw:/證券/,cat:'台股 ETF',cur:'TWD'},
   {kw:/複委託|美股|voo|qqq|spy|iwm|schd|arkk/i,cat:'美股 ETF',cur:'USD'},
   {kw:/基金|fund/i,cat:'基金',cur:'TWD'},
   {kw:/btc|eth|usdt|usdc|幣|crypto|加密/i,cat:'加密貨幣',cur:'USD'},
-  {kw:/貸款|房貸|信貸|負債|車貸/,cat:'負債',cur:'TWD'},
+  {kw:/貸款|房貸|信貸|負債|車貸|增貸|二胎/,cat:'負債',cur:'TWD'},
+  {kw:/外幣/,cat:'現金 ／ 存款',cur:'USD'},
   {kw:/帳戶|存款|活存|定存|銀行|現金|儲蓄|saving/i,cat:'現金 ／ 存款',cur:'TWD'},
 ];
 
@@ -577,10 +579,18 @@ function classify(name,rawLine){
 }
 function parseLine(line){
   const clean=line.trim();if(!clean)return null;
-  const isUSD=/\b(USD|美元|美金)\b/i.test(clean);
-  const numMatch=clean.match(/[\d,]+(\.\d+)?/);if(!numMatch)return null;
-  const amt=parseFloat(numMatch[0].replace(/,/g,''));if(!amt||amt<=0)return null;
-  const name=clean.replace(/[\d,]+(\.\d+)?/,'').replace(/\b(USD|TWD|美元|美金|台幣)\b/gi,'').replace(/[（）()【】\[\]]/g,' ').replace(/\s+/g,' ').trim();
+  const isUSD=/(?:USD|美元|美金)\s*[\d]|[\d]\s*(?:USD|美元|美金)|\b(?:USD|美元|美金)\b/i.test(clean);
+  let amt=0;
+  const usdNumMatch=clean.match(/(?:美元|美金|USD)\s*([\d,]+(?:\.\d+)?)/i);
+  const anyNumMatch=clean.match(/[\d,]+(?:\.\d+)?/);
+  if(usdNumMatch)amt=parseFloat(usdNumMatch[1].replace(/,/g,''));
+  else if(anyNumMatch)amt=parseFloat(anyNumMatch[0].replace(/,/g,''));
+  if(!amt||amt<=0)return null;
+  const name=clean
+    .replace(/(?:美元|美金|USD)\s*[\d,]+(?:\.\d+)?/gi,'')
+    .replace(/[\d,]+(?:\.\d+)?\s*(?:美元|美金|USD|TWD|台幣)?/gi,'')
+    .replace(/[（）()【】\[\]]/g,' ')
+    .replace(/\s+/g,' ').trim();
   if(!name)return null;
   const r=classify(name,clean);
   return{name,amt,cat:r.category,cur:isUSD?'USD':r.currency}
@@ -602,11 +612,21 @@ function renderParsed(){
   parsedItems.forEach((item,i)=>{
     const cd=CAT_DEFS[item.cat]||CAT_DEFS['現金 ／ 存款'];
     const div=document.createElement('div');div.className='pi';div.id=`pi${i}`;
-    div.innerHTML=`<div class="pi-icon">${cd.icon}</div><div class="pi-info"><div class="pi-name">${item.name}</div><div class="pi-row"><span class="pi-badge" id="pib${i}" style="background:${cd.color}22;color:${cd.color}">${item.cat}</span><span class="pi-cur">${item.cur}</span><button class="pi-change-btn" onclick="toggleSel(${i})">改分類</button></div><select class="pi-select" id="pis${i}" style="display:none" onchange="applyChange(${i},this.value)">${Object.keys(CAT_DEFS).map(c=>`<option value="${c}"${c===item.cat?' selected':''}>${CAT_DEFS[c].icon} ${c}</option>`).join('')}</select></div><div class="pi-amt">$${item.amt.toLocaleString()}</div>`;
+    div.innerHTML=`<div class="pi-icon">${cd.icon}</div><div class="pi-info"><div class="pi-name">${item.name}</div><div class="pi-row"><span class="pi-badge" id="pib${i}" style="background:${cd.color}22;color:${cd.color}">${item.cat}</span><button class="pi-cur-btn" id="picur${i}" onclick="toggleCur(${i})" title="點擊切換幣別" style="background:var(--glass2);border:1px solid var(--rim);border-radius:6px;padding:2px 7px;font-size:11px;cursor:pointer;color:var(--ink2);transition:all .15s">${item.cur}</button><button class="pi-change-btn" onclick="toggleSel(${i})">改分類</button></div><select class="pi-select" id="pis${i}" style="display:none" onchange="applyChange(${i},this.value)">${Object.keys(CAT_DEFS).map(c=>`<option value="${c}"${c===item.cat?' selected':''}>${CAT_DEFS[c].icon} ${c}</option>`).join('')}</select></div><div class="pi-amt" id="piamt${i}">$${item.amt.toLocaleString()}</div>`;
     list.appendChild(div);
   });
 }
 function toggleSel(i){const s=document.getElementById(`pis${i}`);s.style.display=s.style.display==='none'?'block':'none'}
+function toggleCur(i){
+  parsedItems[i].cur=parsedItems[i].cur==='TWD'?'USD':'TWD';
+  const btn=document.getElementById(`picur${i}`);
+  if(btn){
+    btn.textContent=parsedItems[i].cur;
+    btn.style.color=parsedItems[i].cur==='USD'?'var(--violet)':'var(--ink2)';
+    btn.style.borderColor=parsedItems[i].cur==='USD'?'rgba(155,140,255,.4)':'var(--rim)';
+  }
+  showToast(`已切換為 ${parsedItems[i].cur}`);
+}
 async function applyChange(i,newCat){
   parsedItems[i].cat=newCat;
   const cd=CAT_DEFS[newCat]||CAT_DEFS['現金 ／ 存款'];

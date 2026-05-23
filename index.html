@@ -504,6 +504,17 @@ document.addEventListener('keydown',e=>{
   if(e.key>='0'&&e.key<='9')np(e.key);if(e.key==='Backspace')npD();if(e.key==='Enter')npS();
 });
 
+/* ── LOCAL DATE HELPER ── */
+function localNow(){
+  // 明確使用裝置本地時區，避免 UTC 偏移造成日期錯誤
+  const d=new Date();
+  return{
+    y:d.getFullYear(),
+    m:d.getMonth()+1,
+    d:d.getDate()
+  };
+}
+
 /* ── INIT ── */
 async function initApp(){
   showLoading('載入資料中…');document.getElementById('app').style.display='block';
@@ -606,7 +617,7 @@ function runParse(){
   if(!parsedItems.length){showToast('找不到有效的金額資料','err');return}
   const y=document.getElementById('py').value,m=document.getElementById('pm').value;
   const pc=document.getElementById('periodConfirm'),pt=document.getElementById('periodTxt');
-  const dy=document.getElementById('pd')?.value||new Date().getDate();if(y&&m){pc.style.display='flex';pt.textContent=`${y} 年 ${m} 月 ${dy} 日`}
+  const dy=document.getElementById('pd')?.value||localNow().d;if(y&&m){pc.style.display='flex';pt.textContent=`${y} 年 ${m} 月 ${dy} 日`}
   renderParsed();
 }
 function renderParsed(){
@@ -650,7 +661,7 @@ async function applyChange(i,newCat){
 async function loadAvailableMonths(){
   const{data}=await db.from('monthly_records').select('id,year,month,day').order('year',{ascending:false}).order('month',{ascending:false}).order('day',{ascending:false});
   if(data&&data.length>0){currentMonth={year:data[0].year,month:data[0].month,day:data[0].day||1};await loadMonthData()}
-  else{currentMonth={year:new Date().getFullYear(),month:new Date().getMonth()+1,day:new Date().getDate()};updateMonthLabel();renderEmpty(null)}
+  else{const _n=localNow();currentMonth={year:_n.y,month:_n.m,day:_n.d};updateMonthLabel();renderEmpty(null)}
 }
 async function loadMonthData(){
   showLoading('載入資料中…');updateMonthLabel();
@@ -1216,10 +1227,10 @@ function toggleTheme(){
 
 /* ── MODAL ── */
 function openModal(){
-  const now=new Date();
-  ['py','my'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=now.getFullYear()});
-  ['pm','mm'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=now.getMonth()+1});
-  ['pd','md'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=now.getDate()});
+  const now=localNow();
+  ['py','my'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=now.y});
+  ['pm','mm'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=now.m});
+  ['pd','md'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=now.d});
   parsedItems=[];document.getElementById('parsedSection').style.display='none';
   document.getElementById('pasteArea').value='';
   document.getElementById('periodConfirm').style.display='none';
@@ -1239,13 +1250,13 @@ function switchTab(i,el){
 /* ── SAVE ── */
 async function saveRecord(){
   const btn=document.getElementById('saveBtn');btn.disabled=true;btn.textContent='儲存中…';
-  let year,month,day2=new Date().getDate(),itemsToSave=[];
+  let year,month,day2=localNow().d,itemsToSave=[];
   if(activeTab===0){
-    year=parseInt(document.getElementById('py').value);month=parseInt(document.getElementById('pm').value);day2=parseInt(document.getElementById('pd').value)||new Date().getDate();
+    year=parseInt(document.getElementById('py').value);month=parseInt(document.getElementById('pm').value);day2=parseInt(document.getElementById('pd').value)||localNow().d;
     if(!parsedItems.length){showToast('請先解析資產文字','err');btn.disabled=false;btn.textContent='儲存記錄';return}
     itemsToSave=parsedItems;
   }else{
-    year=parseInt(document.getElementById('my').value);month=parseInt(document.getElementById('mm').value);day2=parseInt(document.getElementById('md').value)||new Date().getDate();
+    year=parseInt(document.getElementById('my').value);month=parseInt(document.getElementById('mm').value);day2=parseInt(document.getElementById('md').value)||localNow().d;
     const fields=[{id:'m-cash',cat:'現金 ／ 存款',cur:'TWD',name:'現金存款'},{id:'m-tw',cat:'台股 ETF',cur:'TWD',name:'台股 ETF'},{id:'m-fund',cat:'基金',cur:'TWD',name:'基金'},{id:'m-us',cat:'美股 ETF',cur:'USD',name:'美股 ETF'},{id:'m-crypto',cat:'加密貨幣',cur:'USD',name:'加密貨幣'},{id:'m-debt',cat:'負債',cur:'TWD',name:'負債'}];
     fields.forEach(f=>{const v=parseFloat(document.getElementById(f.id).value)||0;if(v>0)itemsToSave.push({name:f.name,amt:v,cat:f.cat,cur:f.cur})});
     if(!itemsToSave.length){showToast('請至少輸入一個項目','err');btn.disabled=false;btn.textContent='儲存記錄';return}

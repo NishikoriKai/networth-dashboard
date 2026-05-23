@@ -342,17 +342,17 @@ body > * { position: relative; z-index: 1; }
 
 .top-btn {
   background: var(--surface-2);
-  border: 1px solid var(--border-1);
+  border: 1px solid var(--border-2);
   border-radius: var(--r-sm);
-  padding: 5px 11px;
-  font-size: 12px; font-weight: 500;
-  color: var(--text-secondary);
+  padding: 5px 10px;
+  font-size: 14px; font-weight: 500;
+  color: var(--text-primary);
   cursor: pointer;
   transition: all var(--dur);
   display: flex; align-items: center; gap: 5px;
-  white-space: nowrap;
+  white-space: nowrap; line-height: 1;
 }
-.top-btn:hover { background:var(--surface-3); border-color:var(--border-2); color:var(--text-primary); }
+.top-btn:hover { background:var(--surface-3); border-color:var(--border-3); }
 
 /* Privacy toggle */
 .top-btn.privacy-on { border-color: rgba(251,191,36,.3); color: #fbbf24; background: rgba(251,191,36,.08); }
@@ -1035,6 +1035,112 @@ thead th:first-child { padding-left: 36px; }
 .toast.err { border-color: var(--up-border); color: var(--up); }
 
 /* ═══════════════════════════════
+   ALLOC DETAIL (inline category chart)
+═══════════════════════════════ */
+.alloc-detail {
+  display: none; padding: var(--s2) 0 var(--s1);
+  border-top: 1px solid var(--border-1); margin-top: var(--s1);
+}
+.alloc-detail.open { display: block; animation: fadeIn .2s var(--ease); }
+@keyframes fadeIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:none} }
+.alloc-row.active { background: var(--surface-2); outline: 1px solid var(--border-2); }
+
+/* ═══════════════════════════════
+   GROWTH RANK CARD
+═══════════════════════════════ */
+.card-growth { grid-column: span 4; }
+.growth-row {
+  display: flex; align-items: center; gap: var(--s1);
+  padding: 7px 0; border-bottom: 1px solid var(--border-1);
+}
+.growth-row:last-child { border: none; }
+.growth-rank {
+  width: 20px; height: 20px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; flex-shrink: 0;
+  background: var(--surface-2); color: var(--text-tertiary);
+}
+.growth-rank.top { background: var(--accent-dim); color: var(--accent); }
+.growth-name { flex: 1; font-size: 12.5px; color: var(--text-secondary); }
+.growth-bar-wrap { width: 60px; height: 4px; background: var(--surface-3); border-radius: 2px; overflow: hidden; }
+.growth-bar-fill { height: 100%; border-radius: 2px; }
+.growth-pct { font-size: 12px; font-weight: 600; min-width: 48px; text-align: right; }
+
+/* ═══════════════════════════════
+   YEAR SUMMARY CARD
+═══════════════════════════════ */
+.card-yearsummary { grid-column: span 8; }
+.ys-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: var(--s2); margin: var(--s2) 0; }
+.ys-stat { background: var(--surface-2); border: 1px solid var(--border-1); border-radius: var(--r-sm); padding: var(--s2); }
+.ys-stat-label { font-size: 10.5px; color: var(--text-tertiary); font-weight: 500; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 6px; }
+.ys-stat-val { font-family: 'DM Serif Display', serif; font-size: 20px; letter-spacing: -0.5px; }
+.ys-stat-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 3px; }
+.ys-months { display: flex; gap: 4px; flex-wrap: wrap; margin-top: var(--s1); }
+.ys-month-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--surface-3); border: 1px solid var(--border-1);
+  cursor: pointer; transition: all .15s;
+}
+.ys-month-dot.has { background: var(--accent); border-color: var(--accent); }
+.ys-month-dot.best { background: var(--dn); border-color: var(--dn); }
+.ys-month-dot.worst { background: var(--up); border-color: var(--up); }
+
+/* ═══════════════════════════════
+   HEATMAP CARD
+═══════════════════════════════ */
+.card-heatmap { grid-column: span 12; }
+.heatmap-wrap { overflow-x: auto; padding-bottom: var(--s1); }
+.heatmap-grid { display: flex; gap: 3px; }
+.hm-col { display: flex; flex-direction: column; gap: 3px; }
+.hm-month-label { font-size: 9px; color: var(--text-tertiary); height: 12px; display: flex; align-items: center; }
+.hm-cell {
+  width: 13px; height: 13px; border-radius: 2px;
+  background: var(--surface-2); border: 1px solid var(--border-1);
+  cursor: pointer; transition: transform .1s; flex-shrink: 0;
+  position: relative;
+}
+.hm-cell:hover { transform: scale(1.3); z-index: 10; }
+.hm-cell.empty { background: var(--surface-1); border-color: transparent; cursor: default; }
+.hm-cell.empty:hover { transform: none; }
+.hm-legend { display: flex; align-items: center; gap: var(--s1); margin-top: var(--s1); font-size: 11px; color: var(--text-tertiary); }
+.hm-legend-cells { display: flex; gap: 3px; }
+.hm-legend-cell { width: 13px; height: 13px; border-radius: 2px; }
+
+/* ═══════════════════════════════
+   GOAL SETTINGS MODAL
+═══════════════════════════════ */
+.goal-modal { background:var(--bg-overlay); border:1px solid var(--border-2); border-radius:var(--r-xl); width:520px; max-height:88vh; overflow-y:auto; padding:var(--s3); transform:translateY(16px) scale(.97); transition:transform .28s var(--spring); box-shadow:0 40px 80px rgba(0,0,0,.5); }
+.goal-modal::-webkit-scrollbar { width:3px; }
+.goal-modal::-webkit-scrollbar-thumb { background:var(--border-2); border-radius:2px; }
+.overlay.open .goal-modal { transform:none; }
+.alloc-slider-row { margin-bottom: var(--s2); }
+.alloc-slider-head { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
+.alloc-slider-icon { font-size:14px; }
+.alloc-slider-name { font-size:13px; font-weight:500; flex:1; }
+.alloc-slider-pct { font-size:13px; font-weight:700; min-width:42px; text-align:right; }
+.alloc-slider-bar { position:relative; }
+.alloc-slider-bar input[type=range] { width:100%; }
+.alloc-total { display:flex; align-items:center; justify-content:space-between; padding:var(--s1) var(--s2); border-radius:var(--r-xs); margin-top:var(--s2); background:var(--surface-2); font-size:13px; font-weight:600; }
+.alloc-total.ok { color:var(--dn); background:var(--dn-dim); }
+.alloc-total.over { color:var(--up); background:var(--up-dim); }
+
+/* ═══════════════════════════════
+   CALC MODAL
+═══════════════════════════════ */
+.calc-modal { background:var(--bg-overlay); border:1px solid var(--border-2); border-radius:var(--r-xl); width:460px; padding:var(--s3); transform:translateY(16px) scale(.97); transition:transform .28s var(--spring); box-shadow:0 40px 80px rgba(0,0,0,.5); }
+.overlay.open .calc-modal { transform:none; }
+.calc-result { background:var(--accent-dim); border:1px solid var(--accent-border); border-radius:var(--r-sm); padding:var(--s2); margin-top:var(--s2); text-align:center; }
+.calc-result-num { font-family:'DM Serif Display',serif; font-size:32px; letter-spacing:-1px; color:var(--accent); }
+.calc-result-sub { font-size:12px; color:var(--text-secondary); margin-top:4px; }
+.calc-chart-wrap { margin-top:var(--s2); }
+
+/* ═══════════════════════════════
+   CSV MODAL
+═══════════════════════════════ */
+.csv-modal { background:var(--bg-overlay); border:1px solid var(--border-2); border-radius:var(--r-xl); width:400px; padding:var(--s3); transform:translateY(16px) scale(.97); transition:transform .28s var(--spring); box-shadow:0 40px 80px rgba(0,0,0,.5); }
+.overlay.open .csv-modal { transform:none; }
+
+/* ═══════════════════════════════
    CONFETTI
 ═══════════════════════════════ */
 .confetti-wrap { position: fixed; inset: 0; pointer-events: none; z-index: 400; overflow: hidden; }
@@ -1049,11 +1155,13 @@ thead th:first-child { padding-left: 36px; }
   .card-stat{grid-column:span 3}
   .card-trend{grid-column:span 8}
   .card-alloc{grid-column:span 4}
-  .card-summary,.card-goal,.card-debt,.card-log{grid-column:span 6}
+  .card-summary,.card-goal,.card-debt,.card-log,.card-growth{grid-column:span 6}
+  .card-yearsummary{grid-column:span 12}
+  .card-heatmap{grid-column:span 12}
 }
 @media(max-width:768px){
   main{grid-template-columns:1fr 1fr;padding:var(--s1) var(--s2) var(--s6)}
-  .card-hero,.card-trend,.card-table,.card-summary,.card-goal,.card-debt,.card-log,.empty-state{grid-column:span 2}
+  .card-hero,.card-trend,.card-table,.card-summary,.card-goal,.card-debt,.card-log,.card-growth,.card-yearsummary,.card-heatmap,.empty-state{grid-column:span 2}
   .card-stat{grid-column:span 1}
   .card-alloc{grid-column:span 2}
   .hero-amount{font-size:40px}
@@ -1062,7 +1170,7 @@ thead th:first-child { padding-left: 36px; }
 }
 @media(max-width:480px){
   main{grid-template-columns:1fr}
-  .card-hero,.card-stat,.card-trend,.card-alloc,.card-table,.card-summary,.card-goal,.card-debt,.card-log,.empty-state{grid-column:1}
+  .card-hero,.card-stat,.card-trend,.card-alloc,.card-table,.card-summary,.card-goal,.card-debt,.card-log,.card-growth,.card-yearsummary,.card-heatmap,.empty-state{grid-column:1}
   .hero-amount{font-size:36px}
 }
 </style>
@@ -1140,6 +1248,10 @@ thead th:first-child { padding-left: 36px; }
       <button class="top-btn" id="themeBtn" onclick="toggleTheme()">🌙</button>
       <!-- Privacy -->
       <button class="top-btn" id="privacyBtn" onclick="togglePrivacy()" title="數字隱藏模式">👁</button>
+      <!-- Tools -->
+      <button class="top-btn" onclick="openGoalSettings()" title="目標設定">🎯</button>
+      <button class="top-btn" onclick="document.getElementById('calcOv').classList.add('open');initCalc()" title="資產試算器">🧮</button>
+      <button class="top-btn" onclick="openCsvModal()" title="匯出 CSV">⬇</button>
       <!-- Add -->
       <button class="add-btn" onclick="openModal()">＋ 新增記錄</button>
     </div>
@@ -1261,6 +1373,78 @@ thead th:first-child { padding-left: 36px; }
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- GOAL SETTINGS MODAL -->
+<div class="overlay" id="goalOv" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="goal-modal">
+    <div class="sm-title">目標設定</div>
+    <div class="sm-sub" style="margin-bottom:var(--s2)">設定退休目標與各類別目標配置比例</div>
+    <div class="fsec">退休目標</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--s1);margin-bottom:var(--s2)">
+      <div class="fg" style="margin:0"><label class="fl">目標金額（TWD）</label><input class="fi" id="gs-amount" type="number" placeholder="30000000"></div>
+      <div class="fg" style="margin:0"><label class="fl">目標年齡</label><input class="fi" id="gs-age" type="number" placeholder="50" min="20" max="80"></div>
+    </div>
+    <div class="fsec">各類別目標配置比例（總計須等於 100%）</div>
+    <div id="allocSliders"></div>
+    <div class="alloc-total" id="allocTotal">總計：0%</div>
+    <div style="display:flex;gap:var(--s1);margin-top:var(--s2)">
+      <button class="btn btn-ghost" style="flex:1" onclick="document.getElementById('goalOv').classList.remove('open')">取消</button>
+      <button class="btn btn-primary" style="flex:2" onclick="saveGoalSettings()">儲存設定</button>
+    </div>
+  </div>
+</div>
+
+<!-- CALC MODAL -->
+<div class="overlay" id="calcOv" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="calc-modal">
+    <div class="sm-title">資產試算器</div>
+    <div class="sm-sub" style="margin-bottom:var(--s2)">複利試算：投入多少年後能達到目標</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--s1)">
+      <div class="fg"><label class="fl">目前資產（TWD）</label><input class="fi" id="cc-current" type="number" placeholder="0"></div>
+      <div class="fg"><label class="fl">每月投入（TWD）</label><input class="fi" id="cc-monthly" type="number" placeholder="0"></div>
+      <div class="fg"><label class="fl">年化報酬率（%）</label><input class="fi" id="cc-rate" type="number" placeholder="8" step="0.1"></div>
+      <div class="fg"><label class="fl">目標金額（TWD）</label><input class="fi" id="cc-target" type="number" placeholder="30000000"></div>
+    </div>
+    <button class="parse-btn" onclick="runCalc()" style="margin-top:var(--s1)">⚡ 試算</button>
+    <div class="calc-result" id="calcResult" style="display:none">
+      <div class="calc-result-num" id="calcNum">—</div>
+      <div class="calc-result-sub" id="calcSub"></div>
+    </div>
+    <div class="calc-chart-wrap"><canvas id="calcChart" height="140" style="display:none"></canvas></div>
+    <div style="margin-top:var(--s2);text-align:right">
+      <button class="btn btn-ghost" style="flex:none;padding:8px 16px" onclick="document.getElementById('calcOv').classList.remove('open')">關閉</button>
+    </div>
+  </div>
+</div>
+
+<!-- CSV MODAL -->
+<div class="overlay" id="csvOv" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="csv-modal">
+    <div class="sm-title">匯出 CSV</div>
+    <div class="sm-sub" style="margin-bottom:var(--s2)">選擇匯出的時間範圍</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--s1)">
+      <div class="fg"><label class="fl">起始年月</label><input class="fi" id="csv-from" type="month"></div>
+      <div class="fg"><label class="fl">結束年月</label><input class="fi" id="csv-to" type="month"></div>
+    </div>
+    <div style="margin:var(--s1) 0;font-size:12px;color:var(--text-tertiary)" id="csvInfo">—</div>
+    <div style="display:flex;gap:var(--s1);margin-top:var(--s1)">
+      <button class="btn btn-ghost" style="flex:1" onclick="document.getElementById('csvOv').classList.remove('open')">取消</button>
+      <button class="btn btn-primary" style="flex:2" onclick="doExportCSV()">⬇ 下載 CSV</button>
+    </div>
+  </div>
+</div>
+
+<!-- CATEGORY CHART OVERLAY (full screen) -->
+<div class="overlay" id="catChartOv" onclick="if(event.target===this)closeCatChart()">
+  <div class="small-modal" style="width:600px;max-width:calc(100vw - 24px)">
+    <div class="sm-title" id="catChartTitle">類別趨勢</div>
+    <div class="sm-sub" id="catChartSub" style="margin-bottom:var(--s2)"></div>
+    <canvas id="catChart" height="180"></canvas>
+    <div style="margin-top:var(--s2);text-align:right">
+      <button class="btn btn-ghost" style="flex:none;padding:8px 16px" onclick="closeCatChart()">關閉</button>
+    </div>
+  </div>
+</div>
 
 <script>
 /* ════════════════════════════════
@@ -1728,6 +1912,34 @@ function renderDashboard() {
     <div class="card card-log card-pad">
       <div class="card-label">操作記錄</div>
       <div class="log-scroll" id="logList"><div style="color:var(--text-tertiary);font-size:12px;padding:6px 0">載入中…</div></div>
+    </div>
+    <!-- GROWTH RANK -->
+    <div class="card card-growth card-pad">
+      <div class="card-label">成長率排行</div>
+      <div id="growthRank"></div>
+    </div>
+    <!-- YEAR SUMMARY -->
+    <div class="card card-yearsummary card-pad">
+      <div class="card-label" style="display:flex;align-items:center;justify-content:space-between">
+        <span id="yearSummaryTitle">年度總結</span>
+        <div style="display:flex;gap:4px">
+          <button onclick="shiftSummaryYear(-1)" style="background:var(--surface-2);border:1px solid var(--border-1);border-radius:6px;padding:2px 8px;font-size:12px;color:var(--text-secondary);cursor:pointer">‹</button>
+          <button onclick="shiftSummaryYear(1)" style="background:var(--surface-2);border:1px solid var(--border-1);border-radius:6px;padding:2px 8px;font-size:12px;color:var(--text-secondary);cursor:pointer">›</button>
+        </div>
+      </div>
+      <div class="ys-stats" id="ysStats"></div>
+      <div class="card-label" style="margin-top:var(--s1);margin-bottom:6px">月份分佈 <span style="font-size:10px;color:var(--text-quaternary)">● 最高 ● 最低 ● 有資料</span></div>
+      <div class="ys-months" id="ysMonths"></div>
+    </div>
+    <!-- HEATMAP -->
+    <div class="card card-heatmap card-pad">
+      <div class="card-label" style="margin-bottom:var(--s2)">資產熱力圖 <span style="font-size:10px;color:var(--text-tertiary);font-weight:400;letter-spacing:0;text-transform:none">— 顏色深淺代表淨資產金額</span></div>
+      <div class="heatmap-wrap"><div class="heatmap-grid" id="heatmapGrid"></div></div>
+      <div class="hm-legend">
+        <span>低</span>
+        <div class="hm-legend-cells" id="hmLegend"></div>
+        <span>高</span>
+      </div>
     </div>`;
 
   // Milestones fireworks
@@ -1743,7 +1955,11 @@ function renderDashboard() {
   catOrder.filter(c=>catTotals[c]>0&&c!=='負債').forEach(c=>{
     const pct=(catTotals[c]/totalA*100).toFixed(1);
     const hex=CAT_HEX[c]||'#888';
-    ar.innerHTML+=`<div class="alloc-row" onclick="hlCat('${c}')" data-cat="${c}"><div class="alloc-swatch" style="background:${hex}"></div><div class="alloc-name">${c}</div><div class="alloc-val" style="color:${hex}">${fmtAmt(catTotals[c])}</div><div class="alloc-pct">${pct}%</div></div>`;
+    // target alloc
+    const targetAllocs=JSON.parse(localStorage.getItem('nw_alloc_target')||'{}');
+    const target=targetAllocs[c];
+    const diffHtml=target?`<span style="font-size:10px;color:${Math.abs(pct-target)<3?'var(--dn)':'var(--up)'};margin-left:4px">${pct-target>=0?'+':''}${(pct-target).toFixed(1)}%</span>`:'';
+    ar.innerHTML+=`<div class="alloc-row" onclick="openCatChart('${c}')" data-cat="${c}" title="點擊查看 ${c} 歷史趨勢"><div class="alloc-swatch" style="background:${hex}"></div><div class="alloc-name">${c}</div><div class="alloc-val" style="color:${hex}">${fmtAmt(catTotals[c])}</div><div class="alloc-pct">${pct}%${diffHtml}</div></div>`;
   });
 
   renderTable(catTotals,catSubs,prevCT,totalA);
@@ -1751,6 +1967,9 @@ function renderDashboard() {
   buildDonutChart(catTotals,totalA);
   renderDebtList();
   loadLog();
+  renderGrowthRank(catTotals,prevCT);
+  renderYearSummary(currentMonth.year);
+  renderHeatmap();
 }
 
 /* ════════════════════════════════
@@ -2217,6 +2436,351 @@ function renderEmpty(nearest){
   const hint=nearest?`<div class="empty-hint">最近一筆：${nearest.year}/${nearest.month}/${nearest.day||1}</div>`:'';
   document.getElementById('mainGrid').innerHTML=`<div class="card empty-state"><div class="empty-icon">📊</div><div class="empty-h">尚無 ${currentMonth.year}/${currentMonth.month}/${currentMonth.day||1} 的資料</div>${hint}<div class="empty-s">點擊下方按鈕新增資產記錄</div><button class="empty-cta" onclick="openModal()">＋ 新增記錄</button></div>`;
   if(tChart){tChart.destroy();tChart=null;} if(dChart){dChart.destroy();dChart=null;}
+}
+
+
+/* ════════════════════════════════
+   GROWTH RANK
+════════════════════════════════ */
+function renderGrowthRank(catTotals, prevCT) {
+  const el = document.getElementById('growthRank'); if(!el)return;
+  const cats = Object.keys(CAT_DEFS).filter(c=>c!=='負債');
+  const rows = cats.map(c=>{
+    const cur=catTotals[c]||0, prev=prevCT[c]||0;
+    const pct = prev>0 ? ((cur-prev)/prev*100) : (cur>0?100:0);
+    return { name:c, cur, pct };
+  }).sort((a,b)=>b.pct-a.pct);
+  const maxAbs = Math.max(...rows.map(r=>Math.abs(r.pct)), 1);
+  el.innerHTML = rows.map((r,i)=>{
+    const isUp=r.pct>=0;
+    const barW = Math.round(Math.abs(r.pct)/maxAbs*100);
+    const color = isUp ? 'var(--up)' : 'var(--dn)';
+    return `<div class="growth-row">
+      <div class="growth-rank${i===0?' top':''}">${i+1}</div>
+      <div class="growth-name">${r.name}</div>
+      <div class="growth-bar-wrap"><div class="growth-bar-fill" style="width:${barW}%;background:${color}"></div></div>
+      <div class="growth-pct" style="color:${color}">${r.pct>=0?'+':''}${r.pct.toFixed(1)}%</div>
+    </div>`;
+  }).join('');
+}
+
+/* ════════════════════════════════
+   YEAR SUMMARY
+════════════════════════════════ */
+let summaryYear = new Date().getFullYear();
+function shiftSummaryYear(d) {
+  summaryYear += d;
+  renderYearSummary(summaryYear);
+}
+function renderYearSummary(year) {
+  summaryYear = year;
+  const el=document.getElementById('ysStats'), mel=document.getElementById('ysMonths');
+  const title=document.getElementById('yearSummaryTitle');
+  if(!el||!mel)return;
+  if(title)title.textContent=`${year} 年度總結`;
+  const yearData = allTrendData.filter(d=>d.year===year);
+  if(!yearData.length){
+    el.innerHTML=`<div style="color:var(--text-tertiary);font-size:12px;grid-column:span 4">${year} 年尚無資料</div>`;
+    mel.innerHTML=''; return;
+  }
+  const nets=yearData.map(d=>d.net);
+  const maxNet=Math.max(...nets), minNet=Math.min(...nets);
+  const first=yearData[0].net, last=yearData[yearData.length-1].net;
+  const yChg=last-first, yChgPct=first>0?((yChg/first)*100).toFixed(1):0;
+  const avg=Math.round(nets.reduce((s,v)=>s+v,0)/nets.length);
+  el.innerHTML=`
+    <div class="ys-stat"><div class="ys-stat-label">年初→年末</div><div class="ys-stat-val" style="color:${yChg>=0?'var(--up)':'var(--dn)'}">${yChg>=0?'+':''}${(yChg/10000).toFixed(0)}萬</div><div class="ys-stat-sub">${yChg>=0?'+':''}${yChgPct}%</div></div>
+    <div class="ys-stat"><div class="ys-stat-label">全年最高</div><div class="ys-stat-val">${(maxNet/10000).toFixed(0)}萬</div></div>
+    <div class="ys-stat"><div class="ys-stat-label">全年最低</div><div class="ys-stat-val">${(minNet/10000).toFixed(0)}萬</div></div>
+    <div class="ys-stat"><div class="ys-stat-label">平均淨資產</div><div class="ys-stat-val">${(avg/10000).toFixed(0)}萬</div><div class="ys-stat-sub">${yearData.length} 筆記錄</div></div>`;
+  // month dots
+  const monthMap={};
+  yearData.forEach(d=>{ const k=d.month; if(!monthMap[k]||d.day>monthMap[k].day)monthMap[k]=d; });
+  const allNets=Object.values(monthMap).map(d=>d.net);
+  const mMax=Math.max(...allNets), mMin=Math.min(...allNets);
+  mel.innerHTML=Array.from({length:12},(_,i)=>{
+    const m=i+1, d=monthMap[m];
+    if(!d)return`<div class="ys-month-dot" title="${m}月：無資料"></div>`;
+    const isBest=d.net===mMax, isWorst=d.net===mMin;
+    return`<div class="ys-month-dot has${isBest?' best':''}${isWorst?' worst':''}" title="${m}月：${(d.net/10000).toFixed(0)}萬" onclick="jumpToRecord(${year},${m},${d.day})"></div>`;
+  }).join('');
+}
+async function jumpToRecord(year,month,day){
+  currentMonth={year,month,day};await loadMonthData();
+}
+
+/* ════════════════════════════════
+   HEATMAP
+════════════════════════════════ */
+function renderHeatmap() {
+  const grid=document.getElementById('heatmapGrid');
+  const legend=document.getElementById('hmLegend');
+  if(!grid||!allTrendData.length)return;
+  // build day map
+  const dayMap={};
+  allTrendData.forEach(d=>{ dayMap[`${d.year}-${d.month}-${d.day}`]=d.net; });
+  const nets=Object.values(dayMap);
+  const maxNet=Math.max(...nets), minNet=Math.min(...nets);
+  // heatmap color scale: 5 levels
+  const levels=['rgba(255,255,255,.06)','rgba(77,159,255,.15)','rgba(77,159,255,.35)','rgba(77,159,255,.6)','rgba(77,159,255,.9)'];
+  function getLevel(net){ const r=(net-minNet)/(maxNet-minNet||1); return Math.min(4,Math.floor(r*5)); }
+  // build by week columns
+  if(!allTrendData.length)return;
+  const first=allTrendData[0], last=allTrendData[allTrendData.length-1];
+  const startDate=new Date(first.year,first.month-1,1);
+  const endDate=new Date(last.year,last.month-1,last.day);
+  // group by month
+  const months={};
+  allTrendData.forEach(d=>{
+    const k=`${d.year}-${String(d.month).padStart(2,'0')}`;
+    if(!months[k])months[k]=[];
+    months[k].push(d);
+  });
+  const sortedMonths=Object.keys(months).sort();
+  grid.innerHTML='';
+  sortedMonths.forEach(mk=>{
+    const [y,m]=mk.split('-').map(Number);
+    const daysInMonth=new Date(y,m,0).getDate();
+    const col=document.createElement('div');col.className='hm-col';
+    const lbl=document.createElement('div');lbl.className='hm-month-label';lbl.textContent=`${m}月`;
+    col.appendChild(lbl);
+    const monthDays=months[mk];
+    const dayNetMap={};monthDays.forEach(d=>dayNetMap[d.day]=d.net);
+    for(let day=1;day<=Math.min(daysInMonth,31);day++){
+      const cell=document.createElement('div');
+      if(dayNetMap[day]!==undefined){
+        const lv=getLevel(dayNetMap[day]);
+        cell.className='hm-cell';
+        cell.style.background=levels[lv];
+        cell.style.borderColor='transparent';
+        const net=dayNetMap[day];
+        const pct=maxNet>minNet?((net-minNet)/(maxNet-minNet)*100).toFixed(0):100;
+        cell.title=`${y}/${m}/${day}
+${(net/10000).toFixed(0)}萬 (${pct}%)`;
+        cell.onclick=()=>jumpToRecord(y,m,day);
+      }else{cell.className='hm-cell empty';}
+      col.appendChild(cell);
+    }
+    grid.appendChild(col);
+  });
+  // legend
+  legend.innerHTML=levels.map(c=>`<div class="hm-legend-cell" style="background:${c};border:1px solid var(--border-1)"></div>`).join('');
+}
+
+/* ════════════════════════════════
+   CATEGORY CHART
+════════════════════════════════ */
+let catChartInst=null;
+function openCatChart(catName){
+  const cd=CAT_DEFS[catName]; const hex=CAT_HEX[catName]||'#888';
+  document.getElementById('catChartTitle').textContent=`${cd?.icon||''} ${catName} 歷史趨勢`;
+  document.getElementById('catChartSub').textContent='點擊資料點跳至該日記錄';
+  // build data from allTrendData + items
+  buildCatChartData(catName, hex);
+  document.getElementById('catChartOv').classList.add('open');
+}
+function closeCatChart(){
+  document.getElementById('catChartOv').classList.remove('open');
+  if(catChartInst){catChartInst.destroy();catChartInst=null;}
+}
+async function buildCatChartData(catName, hex){
+  if(catChartInst){catChartInst.destroy();catChartInst=null;}
+  // fetch all records and their cat totals
+  const recs=allTrendData;
+  if(!recs.length)return;
+  const ids=(await db.from('monthly_records').select('id,year,month,day').order('year').order('month').order('day')).data||[];
+  const idMap={};ids.forEach(r=>idMap[`${r.year}-${r.month}-${r.day||1}`]=r.id);
+  const allIds=ids.map(r=>r.id);
+  const {data:items}=await db.from('asset_items').select('record_id,amount_twd,category').in('record_id',allIds).eq('category',catName);
+  const catByRecord={};
+  (items||[]).forEach(it=>{catByRecord[it.record_id]=(catByRecord[it.record_id]||0)+it.amount_twd;});
+  const labels=[],values=[],recRefs=[];
+  ids.forEach(r=>{
+    const v=catByRecord[r.id]||0;
+    if(v>0){labels.push(`${r.year}/${r.month}/${r.day||1}`);values.push(Math.round(v/FX_RATES[curMode]));recRefs.push(r);}
+  });
+  const ctx=document.getElementById('catChart'); if(!ctx)return;
+  ctx.style.display='block';
+  const c=ctx.getContext('2d');
+  const g=c.createLinearGradient(0,0,0,160);
+  g.addColorStop(0,hex+'33');g.addColorStop(1,hex+'00');
+  catChartInst=new Chart(ctx,{type:'line',data:{labels,datasets:[{data:values,borderColor:hex,backgroundColor:g,borderWidth:2,pointRadius:4,pointBackgroundColor:hex,tension:.4,fill:true}]},
+    options:{responsive:true,plugins:{legend:{display:false},tooltip:{backgroundColor:lightMode?'rgba(255,255,255,.95)':'rgba(14,14,26,.95)',bodyColor:lightMode?'#111120':'#f0f0f8',borderColor:hex+'66',borderWidth:1,callbacks:{label:c=>' '+fmtAmt(c.raw*FX_RATES[curMode])}}},
+    scales:{x:{grid:{color:gc()},ticks:{color:tc(),font:{size:10},maxTicksLimit:8}},y:{grid:{color:gc()},ticks:{color:tc(),font:{size:11},callback:v=>{const t=v*FX_RATES[curMode];return t>=1000000?'$'+(t/1e6).toFixed(1)+'M':'$'+(t/1000).toFixed(0)+'K';}}}},
+    onClick:(e,els)=>{if(els.length){const r=recRefs[els[0].index];if(r){closeCatChart();currentMonth={year:r.year,month:r.month,day:r.day||1};loadMonthData();}}}
+  }});
+}
+
+/* ════════════════════════════════
+   GOAL SETTINGS
+════════════════════════════════ */
+const GOAL_ALLOC_KEY='nw_alloc_target';
+function openGoalSettings(){
+  const goal=parseInt(localStorage.getItem('nw_retire_goal')||'30000000');
+  const age=parseInt(localStorage.getItem('nw_retire_age')||'50');
+  document.getElementById('gs-amount').value=goal;
+  document.getElementById('gs-age').value=age;
+  renderAllocSliders();
+  document.getElementById('goalOv').classList.add('open');
+}
+function renderAllocSliders(){
+  const saved=JSON.parse(localStorage.getItem(GOAL_ALLOC_KEY)||'{}');
+  const investCats=Object.keys(CAT_DEFS).filter(c=>c!=='負債');
+  const container=document.getElementById('allocSliders'); container.innerHTML='';
+  let total=investCats.reduce((s,c)=>s+(saved[c]||0),0);
+  if(total===0){ // default equal
+    const eq=Math.floor(100/investCats.length);
+    investCats.forEach((c,i)=>saved[c]=i===investCats.length-1?100-(eq*(investCats.length-1)):eq);
+  }
+  investCats.forEach(c=>{
+    const cd=CAT_DEFS[c]; const hex=CAT_HEX[c]||'#888';
+    const val=saved[c]||0;
+    const row=document.createElement('div');row.className='alloc-slider-row';
+    row.innerHTML=`<div class="alloc-slider-head"><span class="alloc-slider-icon">${cd.icon}</span><span class="alloc-slider-name">${c}</span><span class="alloc-slider-pct" id="asp_${c.replace(/[\s／]/g,'_')}" style="color:${hex}">${val}%</span></div><div class="alloc-slider-bar"><input type="range" min="0" max="100" value="${val}" oninput="updateAllocSlider('${c}',this.value)" style="accent-color:${hex}"></div>`;
+    container.appendChild(row);
+  });
+  updateAllocTotal();
+}
+function updateAllocSlider(catName,val){
+  const key=catName.replace(/[\s／]/g,'_');
+  const el=document.getElementById(`asp_${key}`);
+  if(el)el.textContent=val+'%';
+  updateAllocTotal();
+}
+function updateAllocTotal(){
+  const investCats=Object.keys(CAT_DEFS).filter(c=>c!=='負債');
+  let total=0;
+  investCats.forEach(c=>{
+    const key=c.replace(/[\s／]/g,'_');
+    const el=document.getElementById(`asp_${key}`);
+    if(el)total+=parseInt(el.textContent)||0;
+  });
+  const tel=document.getElementById('allocTotal');
+  if(tel){tel.textContent=`總計：${total}%`;tel.className='alloc-total'+(total===100?' ok':total>100?' over':'');}
+}
+function saveGoalSettings(){
+  const amount=parseInt(document.getElementById('gs-amount').value)||30000000;
+  const age=parseInt(document.getElementById('gs-age').value)||50;
+  localStorage.setItem('nw_retire_goal',amount);
+  localStorage.setItem('nw_retire_age',age);
+  const investCats=Object.keys(CAT_DEFS).filter(c=>c!=='負債');
+  const allocs={};
+  let total=0;
+  investCats.forEach(c=>{
+    const key=c.replace(/[\s／]/g,'_');
+    const el=document.getElementById(`asp_${key}`);
+    const v=parseInt(el?.textContent)||0;
+    allocs[c]=v; total+=v;
+  });
+  if(total!==100){showToast('各類別比例總計必須等於 100%','err');return;}
+  localStorage.setItem(GOAL_ALLOC_KEY,JSON.stringify(allocs));
+  document.getElementById('goalOv').classList.remove('open');
+  showToast('✓ 目標設定已儲存');
+  if(currentData)renderDashboard();
+}
+
+/* ════════════════════════════════
+   CALCULATOR
+════════════════════════════════ */
+let calcChartInst=null;
+function initCalc(){
+  const goal=localStorage.getItem('nw_retire_goal')||'30000000';
+  const current=currentData?currentData.items.filter(i=>i.category!=='負債').reduce((s,i)=>s+i.amount_twd,0)-currentData.items.filter(i=>i.category==='負債').reduce((s,i)=>s+i.amount_twd,0):0;
+  document.getElementById('cc-current').value=Math.round(current)||0;
+  document.getElementById('cc-target').value=goal;
+  document.getElementById('cc-rate').value=8;
+  document.getElementById('cc-monthly').value=30000;
+  document.getElementById('calcResult').style.display='none';
+  const cc=document.getElementById('calcChart');if(cc)cc.style.display='none';
+  if(calcChartInst){calcChartInst.destroy();calcChartInst=null;}
+}
+function runCalc(){
+  const current=parseFloat(document.getElementById('cc-current').value)||0;
+  const monthly=parseFloat(document.getElementById('cc-monthly').value)||0;
+  const rate=parseFloat(document.getElementById('cc-rate').value)||8;
+  const target=parseFloat(document.getElementById('cc-target').value)||30000000;
+  const monthRate=rate/100/12;
+  let balance=current, months=0, labels=[],values=[];
+  labels.push('現在');values.push(Math.round(balance));
+  while(balance<target&&months<600){
+    balance=balance*(1+monthRate)+monthly;
+    months++;
+    if(months%12===0){labels.push(`${months/12}年後`);values.push(Math.round(balance));}
+  }
+  const years=Math.floor(months/12), rem=months%12;
+  const res=document.getElementById('calcResult'),num=document.getElementById('calcNum'),sub=document.getElementById('calcSub');
+  res.style.display='block';
+  if(months>=600){num.textContent='600個月以上';sub.textContent='建議增加月投入或報酬率';return;}
+  num.textContent=years>0?`${years} 年 ${rem} 個月`:`${months} 個月`;
+  sub.textContent=`月投入 $${monthly.toLocaleString()} × 年化 ${rate}% → 達成 $${(target/10000).toFixed(0)}萬`;
+  // chart
+  const ctx=document.getElementById('calcChart'); if(!ctx)return;
+  ctx.style.display='block';
+  if(calcChartInst){calcChartInst.destroy();calcChartInst=null;}
+  const c=ctx.getContext('2d');
+  const g=c.createLinearGradient(0,0,0,120);g.addColorStop(0,'rgba(77,159,255,.2)');g.addColorStop(1,'rgba(77,159,255,0)');
+  calcChartInst=new Chart(ctx,{type:'line',data:{labels,datasets:[{data:values,borderColor:'#4d9fff',backgroundColor:g,borderWidth:2,pointRadius:2,tension:.4,fill:true},{data:Array(labels.length).fill(target),borderColor:'rgba(255,85,85,.5)',borderWidth:1.5,borderDash:[5,5],pointRadius:0,fill:false,label:'目標'}]},
+    options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` $${(c.raw/10000).toFixed(0)}萬`}}},scales:{x:{grid:{color:gc()},ticks:{color:tc(),font:{size:10},maxTicksLimit:6}},y:{grid:{color:gc()},ticks:{color:tc(),font:{size:10},callback:v=>'$'+(v/1e6).toFixed(1)+'M'}}}}});
+}
+
+/* ════════════════════════════════
+   CSV EXPORT
+════════════════════════════════ */
+function openCsvModal(){
+  if(!allTrendData.length){showToast('尚無資料可匯出','err');return;}
+  const first=allTrendData[0],last=allTrendData[allTrendData.length-1];
+  document.getElementById('csv-from').value=`${first.year}-${String(first.month).padStart(2,'0')}`;
+  document.getElementById('csv-to').value=`${last.year}-${String(last.month).padStart(2,'0')}`;
+  updateCsvInfo();
+  document.getElementById('csvOv').classList.add('open');
+}
+function updateCsvInfo(){
+  const from=document.getElementById('csv-from').value;
+  const to=document.getElementById('csv-to').value;
+  if(!from||!to)return;
+  const [fy,fm]=from.split('-').map(Number);
+  const [ty,tm]=to.split('-').map(Number);
+  const count=allTrendData.filter(d=>{
+    const ym=d.year*100+d.month;
+    return ym>=(fy*100+fm)&&ym<=(ty*100+tm);
+  }).length;
+  document.getElementById('csvInfo').textContent=`共 ${count} 筆記錄`;
+}
+document.addEventListener('change',e=>{if(e.target.id==='csv-from'||e.target.id==='csv-to')updateCsvInfo();});
+async function doExportCSV(){
+  const from=document.getElementById('csv-from').value;
+  const to=document.getElementById('csv-to').value;
+  if(!from||!to){showToast('請選擇時間範圍','err');return;}
+  const [fy,fm]=from.split('-').map(Number);
+  const [ty,tm]=to.split('-').map(Number);
+  const targetRecs=allTrendData.filter(d=>{const ym=d.year*100+d.month;return ym>=(fy*100+fm)&&ym<=(ty*100+tm);});
+  if(!targetRecs.length){showToast('此範圍無資料','err');return;}
+  showToast('準備匯出…');
+  // fetch all items for these records
+  const {data:allRecs}=await db.from('monthly_records').select('id,year,month,day,usd_rate').in('id',
+    (await db.from('monthly_records').select('id,year,month,day').filter('year','gte',fy).filter('year','lte',ty)).data?.map(r=>r.id)||[]
+  );
+  const recIds=(allRecs||[]).filter(r=>{const ym=r.year*100+r.month;return ym>=(fy*100+fm)&&ym<=(ty*100+tm);}).map(r=>r.id);
+  const {data:items}=await db.from('asset_items').select('*').in('record_id',recIds);
+  const recMap={};(allRecs||[]).forEach(r=>recMap[r.id]=r);
+  // build CSV
+  const rows=[['日期','年','月','日','類別','項目名稱','原始金額','幣別','台幣金額','即時匯率']];
+  (items||[]).sort((a,b)=>{
+    const ra=recMap[a.record_id],rb=recMap[b.record_id];
+    if(!ra||!rb)return 0;
+    return new Date(ra.year,ra.month-1,ra.day||1)-new Date(rb.year,rb.month-1,rb.day||1);
+  }).forEach(item=>{
+    const r=recMap[item.record_id]; if(!r)return;
+    const day=r.day||1;
+    rows.push([`${r.year}/${r.month}/${day}`,r.year,r.month,day,item.category,item.name,item.amount_original,item.currency,item.amount_twd,r.usd_rate||32]);
+  });
+  const csv=rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+  const blob=new Blob([`\uFEFF${csv}`],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`networth_${from}_${to}.csv`;a.click();
+  URL.revokeObjectURL(url);
+  document.getElementById('csvOv').classList.remove('open');
+  showToast(`✓ 已匯出 ${rows.length-1} 筆`);
 }
 
 /* ════════════════════════════════

@@ -324,11 +324,21 @@ body {
 
 /* Trend card */
 .trend-card { background:var(--bg-card); border-radius:var(--r-lg); padding:var(--s2); box-shadow:var(--shadow-sm); margin-bottom:12px; border:1px solid var(--sep); }
-.trend-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:var(--s1); }
-.trend-head-left {}
-.trend-big { font-size:26px; font-weight:800; letter-spacing:-1px; margin-bottom:2px; transition:filter .3s; }
+.trend-tabs-top { display:flex; gap:3px; background:var(--bg-card2); border:1px solid var(--sep); border-radius:22px; padding:3px; width:fit-content; margin:0 auto var(--s2); }
+.trend-tab { padding:5px 14px; border-radius:20px; font-size:13px; font-weight:500; color:var(--ink-3); cursor:pointer; transition:all .18s; }
+.trend-tab.on { background:var(--ink); color:var(--bg-card); font-weight:600; }
+.dark .trend-tab.on { background:var(--ink); color:var(--bg); }
+.trend-section { margin-bottom:var(--s2); }
+.trend-section-label { font-size:11px; color:var(--ink-3); font-weight:500; margin-bottom:4px; }
+.trend-big { font-size:26px; font-weight:800; letter-spacing:-1px; margin-bottom:2px; transition:filter .3s; display:flex; align-items:center; gap:6px; }
 .trend-big.blur { filter:blur(8px); }
 .trend-chg { font-size:12px; font-weight:600; }
+.trend-arrow-badge { width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:9px; flex-shrink:0; }
+.chart-wrap { height:90px; position:relative; margin-bottom:4px; overflow:hidden; }
+.chart-wrap canvas { width:100%!important; height:90px!important; display:block; }
+.bar-chart-wrap { height:64px; position:relative; margin-bottom:4px; overflow:hidden; }
+.bar-chart-wrap canvas { width:100%!important; height:64px!important; display:block; }
+.chart-x-labels { display:flex; justify-content:space-between; font-size:10px; color:var(--ink-3); padding:0 2px; }
 .trend-tabs {
   display: flex; gap:3px;
   background: var(--bg-card2); border:1px solid var(--sep);
@@ -341,8 +351,8 @@ body {
 }
 .trend-tab.on { background:var(--bg-card); color:var(--ink); box-shadow:var(--shadow-sm); }
 .dark .trend-tab.on { background:rgba(255,255,255,.12); }
-.chart-wrap { height:100px; position:relative; margin:var(--s2) 0 var(--s1); }
-.chart-wrap canvas { width:100%!important; }
+.chart-wrap { height:110px; position:relative; margin:var(--s2) 0 var(--s1); overflow:hidden; }
+.chart-wrap canvas { width:100%!important; height:110px!important; display:block; }
 .range-wrap { padding-top:var(--s1); border-top:1px solid var(--sep); margin-top:var(--s1); }
 .range-labels { display:flex; justify-content:space-between; font-size:11px; color:var(--ink-3); margin-bottom:5px; }
 .range-labels b { color:var(--blue); }
@@ -934,18 +944,30 @@ input[type=range]::-webkit-slider-thumb {
 
       <!-- Trend -->
       <div class="trend-card">
-        <div class="trend-head">
-          <div class="trend-head-left">
-            <div class="trend-big" id="trendBig">—</div>
-            <div class="trend-chg" id="trendChg"></div>
-          </div>
-          <div class="trend-tabs">
-            <div class="trend-tab on" onclick="setTrendMode('day',this)">日</div>
-            <div class="trend-tab" onclick="setTrendMode('month',this)">月</div>
-          </div>
+        <!-- 日/月 tabs 置中 -->
+        <div class="trend-tabs-top">
+          <div class="trend-tab on" onclick="setTrendMode('day',this)">日</div>
+          <div class="trend-tab" onclick="setTrendMode('month',this)">月</div>
         </div>
-        <div class="chart-wrap"><canvas id="tChart"></canvas></div>
-        <div class="range-wrap" id="rangeWrap" style="display:none">
+        <!-- 折線圖 section -->
+        <div class="trend-section">
+          <div class="trend-section-label">每月趨勢</div>
+          <div class="trend-big" id="trendBig">
+            <span id="trendBigNum">—</span>
+            <span class="trend-arrow-badge" id="trendArrowBadge"></span>
+          </div>
+          <div class="chart-wrap"><canvas id="tChart"></canvas></div>
+          <div class="chart-x-labels" id="tChartLabels"></div>
+        </div>
+        <!-- 柱狀圖 section -->
+        <div class="trend-section" style="margin-bottom:0">
+          <div class="trend-section-label">每月變化</div>
+          <div class="trend-big" id="trendBarBig" style="font-size:22px;margin-bottom:var(--s1)">—</div>
+          <div class="bar-chart-wrap"><canvas id="bChart"></canvas></div>
+          <div class="chart-x-labels" id="bChartLabels"></div>
+        </div>
+        <!-- Range slider -->
+        <div class="range-wrap" id="rangeWrap" style="display:none;margin-top:var(--s1)">
           <div class="range-labels">起：<b id="rangeS"></b> — 終：<b id="rangeE"></b></div>
           <input type="range" id="tSlider" min="0" value="0" oninput="onSlider(this.value)">
         </div>
@@ -1376,7 +1398,7 @@ let dbRules     = {};
 let summaryYear = new Date().getFullYear();
 let pickerYear_ = new Date().getFullYear();
 let availMonths = new Set();
-let tChart = null, dChart = null, calcChartInst = null;
+let tChart = null, bChart = null, dChart = null, calcChartInst = null;
 
 /* ════════════════════════════════
    UTILS
@@ -1590,9 +1612,19 @@ function renderOverviewPage(){
   if(prevTD!==null) sd.innerHTML=`<span class="${totalD<=prevTD?'dn':'up'}">${totalD<=prevTD?'▼':'▲'} ${fmt(Math.abs(totalD-prevTD))}</span>`;
 
   // Trend header
-  setBlurrable('trendBig',fmt(net));
-  const tc_=document.getElementById('trendChg');
-  if(netChg!==null) tc_.innerHTML=`<span class="${netChg>=0?'up':'dn'}">${netChg>=0?'▲':'▼'} ${fmt(Math.abs(netChg))} (${netChg>=0?'+':''}${netChgPct}%)</span>`;
+  setBlurrable('trendBigNum',fmt(net));
+  // Arrow badge
+  const tab=document.getElementById('trendArrowBadge');
+  if(tab&&netChg!==null){
+    tab.style.background=netChg>=0?'var(--red-dim)':'var(--green-dim)';
+    tab.style.color=netChg>=0?'var(--red)':'var(--green)';
+    tab.textContent=netChg>=0?'▲':'▼';
+  }
+  // Bar chart big number = latest monthly change
+  const bb=document.getElementById('trendBarBig');
+  if(bb&&netChg!==null){
+    bb.innerHTML=`<span style="color:${netChg>=0?'var(--red)':'var(--green)'}">${netChg>=0?'+':''}${fmt(netChg)}</span>`;
+  }
 
   // Alloc bar
   const bar=document.getElementById('allocBar');
@@ -1880,32 +1912,74 @@ async function addLog(action,detail=''){await db.from('activity_log').insert({ac
 ════════════════════════════════ */
 function buildTrendChart(){
   if(tChart){tChart.destroy();tChart=null;}
+  if(bChart){bChart.destroy();bChart=null;}
   const td=getTrendData(); if(!td.length)return;
   const rw=document.getElementById('rangeWrap');
   if(td.length>1){rw.style.display='block';const sl=document.getElementById('tSlider');sl.max=td.length-1;sl.value=trendStartIdx;updateRangeLabels();}
   else rw.style.display='none';
   drawTrendChart();
+  drawBarChart();
 }
 function drawTrendChart(){
   if(tChart){tChart.destroy();tChart=null;}
   const td=getTrendData();const visible=td.slice(trendStartIdx);if(!visible.length)return;
   const ctx=document.getElementById('tChart');if(!ctx)return;
   const c=ctx.getContext('2d');
-  const g=c.createLinearGradient(0,0,0,120);
-  const bc=darkMode?'rgba(77,159,255,.2)':'rgba(37,99,235,.12)';
+  const g=c.createLinearGradient(0,0,0,90);
+  const bc=darkMode?'rgba(77,159,255,.22)':'rgba(37,99,235,.13)';
   g.addColorStop(0,bc);g.addColorStop(1,'rgba(37,99,235,0)');
   const lc_=darkMode?'#4d9fff':'#2563eb';
-  tChart=new Chart(ctx,{type:'line',data:{labels:visible.map(d=>d.label),datasets:[{data:visible.map(d=>Math.round(d.net/FX[curMode])),borderColor:lc_,backgroundColor:g,borderWidth:2.5,pointRadius:visible.length>14?2:4,pointBackgroundColor:lc_,tension:.4,fill:true}]},
-    options:{responsive:true,plugins:{legend:{display:false},tooltip:{backgroundColor:darkMode?'rgba(20,20,32,.95)':'rgba(255,255,255,.95)',titleColor:darkMode?'#f0f0f8':'#111118',bodyColor:darkMode?'#f0f0f8':'#111118',borderColor:darkMode?'rgba(255,255,255,.1)':'rgba(0,0,0,.1)',borderWidth:1,callbacks:{label:c=>' '+fmt(Math.round(c.raw*FX[curMode]))}}},
-    scales:{x:{grid:{color:gc()},ticks:{color:tc(),font:{size:10},maxTicksLimit:6}},y:{grid:{color:gc()},ticks:{color:tc(),font:{size:10},callback:v=>{const t=v*FX[curMode];return t>=1000000?'$'+(t/1e6).toFixed(1)+'M':'$'+(t/1000).toFixed(0)+'K';}}}}
+  // x-axis labels (show ~4)
+  const xlabels=document.getElementById('tChartLabels');
+  if(xlabels){
+    const step=Math.max(1,Math.floor(visible.length/4));
+    const pts=[];for(let i=0;i<visible.length;i+=step)pts.push(visible[i].label.slice(0,7));
+    if(pts[pts.length-1]!==visible[visible.length-1].label.slice(0,7))pts[pts.length-1]=visible[visible.length-1].label.slice(0,7);
+    xlabels.innerHTML=pts.map(l=>`<span>${l}</span>`).join('');
+  }
+  tChart=new Chart(ctx,{type:'line',data:{labels:visible.map(d=>d.label),datasets:[{data:visible.map(d=>Math.round(d.net/FX[curMode])),borderColor:lc_,backgroundColor:g,borderWidth:2.5,pointRadius:0,pointHoverRadius:4,pointHoverBackgroundColor:lc_,tension:.4,fill:true}]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{display:false},tooltip:{backgroundColor:darkMode?'rgba(20,20,32,.95)':'rgba(255,255,255,.95)',titleColor:darkMode?'#f0f0f8':'#111118',bodyColor:darkMode?'#f0f0f8':'#111118',borderColor:darkMode?'rgba(255,255,255,.1)':'rgba(0,0,0,.08)',borderWidth:1,padding:8,callbacks:{label:c=>' '+fmt(Math.round(c.raw*FX[curMode]))}}},
+    scales:{x:{display:false},y:{display:false,min:ctx=>ctx.chart.data.datasets[0].data.reduce((a,b)=>Math.min(a,b),Infinity)*0.98}}
     }});
+}
+function drawBarChart(){
+  if(bChart){bChart.destroy();bChart=null;}
+  const td=getTrendData();const visible=td.slice(trendStartIdx);if(visible.length<2)return;
+  const ctx=document.getElementById('bChart');if(!ctx)return;
+  // compute monthly changes
+  const changes=[];
+  for(let i=1;i<visible.length;i++){changes.push({v:visible[i].net-visible[i-1].net,label:visible[i].label});}
+  // x-axis labels
+  const xlabels=document.getElementById('bChartLabels');
+  if(xlabels){
+    const step=Math.max(1,Math.floor(changes.length/4));
+    const pts=[];for(let i=0;i<changes.length;i+=step)pts.push(changes[i].label.slice(0,7));
+    if(pts[pts.length-1]!==changes[changes.length-1].label.slice(0,7))pts[pts.length-1]=changes[changes.length-1].label.slice(0,7);
+    xlabels.innerHTML=pts.map(l=>`<span>${l}</span>`).join('');
+  }
+  // bar colors: up=red(TW), dn=green(TW)
+  const upC=darkMode?'rgba(248,113,113,.8)':'rgba(220,38,38,.75)';
+  const dnC=darkMode?'rgba(52,211,153,.8)':'rgba(22,163,74,.75)';
+  const colors=changes.map(c=>c.v>=0?upC:dnC);
+  bChart=new Chart(ctx,{type:'bar',data:{labels:changes.map(c=>c.label),datasets:[{data:changes.map(c=>Math.round(c.v/FX[curMode])),backgroundColor:colors,borderRadius:3,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{backgroundColor:darkMode?'rgba(20,20,32,.95)':'rgba(255,255,255,.95)',titleColor:darkMode?'#f0f0f8':'#111118',bodyColor:darkMode?'#f0f0f8':'#111118',borderColor:darkMode?'rgba(255,255,255,.1)':'rgba(0,0,0,.08)',borderWidth:1,padding:8,callbacks:{label:c=>{const v=Math.round(c.raw*FX[curMode]);return ' '+(v>=0?'+':'')+fmt(v);}}}},
+    scales:{x:{display:false},y:{display:false}}}});
+  // Update bar big number = latest change
+  const bb=document.getElementById('trendBarBig');
+  if(bb&&changes.length){
+    const last=changes[changes.length-1].v;
+    bb.innerHTML=`<span style="color:${last>=0?'var(--red)':'var(--green)'}">${last>=0?'+':''}${fmt(last)}</span>`;
+  }
 }
 function setTrendMode(mode,el){
   trendMode=mode; trendStartIdx=0;
-  document.querySelectorAll('.trend-tab').forEach((t,i)=>t.classList.toggle('on',i===(mode==='day'?0:1)));
+  document.querySelectorAll('.trend-tab').forEach(t=>t.classList.remove('on'));
+  if(el)el.classList.add('on');
   buildTrendChart();
 }
-function onSlider(val){const td=getTrendData();trendStartIdx=Math.min(parseInt(val),td.length-1);updateRangeLabels();drawTrendChart();}
+function onSlider(val){const td=getTrendData();trendStartIdx=Math.min(parseInt(val),td.length-1);updateRangeLabels();drawTrendChart();drawBarChart();}
 function updateRangeLabels(){const td=getTrendData();if(!td.length)return;const rs=document.getElementById('rangeS'),re=document.getElementById('rangeE');if(rs)rs.textContent=td[Math.min(trendStartIdx,td.length-1)].label;if(re)re.textContent=td[td.length-1].label;}
 
 /* ════════════════════════════════

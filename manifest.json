@@ -1,22 +1,24 @@
 {
-  "name": "NETWORTH 資產儀表板",
-  "short_name": "NETWORTH",
+  "name": "Nexo",
+  "short_name": "Nexo",
   "description": "個人資產追蹤儀表板",
   "start_url": "/networth-dashboard/",
   "display": "standalone",
-  "background_color": "#08080f",
-  "theme_color": "#08080f",
+  "background_color": "#1a1a1e",
+  "theme_color": "#1a1a1e",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='42' fill='%2308080f'/><path d='M96 32L40 64v64l56 32 56-32V64L96 32z' stroke='%234d9fff' stroke-width='6' fill='none' stroke-linejoin='round'/><path d='M96 32v96M40 64l56 32 56-32' stroke='%234d9fff' stroke-width='6' fill='none' stroke-linejoin='round'/></svg>",
-      "sizes": "192x192",
-      "type": "image/svg+xml"
+      "src": "icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='112' fill='%2308080f'/><path d='M256 80L100 168v176l156 88 156-88V168L256 80z' stroke='%234d9fff' stroke-width='16' fill='none' stroke-linejoin='round'/><path d='M256 80v264M100 168l156 88 156-88' stroke='%234d9fff' stroke-width='16' fill='none' stroke-linejoin='round'/></svg>",
-      "sizes": "512x512",
-      "type": "image/svg+xml"
+      "src": "icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

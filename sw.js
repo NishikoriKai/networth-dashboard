@@ -1,8 +1,9 @@
-const CACHE = 'networth-v1';
+const CACHE = 'nexo-v2';
 const ASSETS = [
   '/networth-dashboard/',
   '/networth-dashboard/index.html',
   '/networth-dashboard/manifest.json',
+  '/networth-dashboard/icon.png',
 ];
 
 self.addEventListener('install', e => {
@@ -22,7 +23,6 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Only cache same-origin HTML/CSS/JS, pass through API calls
   if(e.request.url.includes('supabase') || e.request.url.includes('googleapis') || e.request.url.includes('er-api')) {
     return;
   }

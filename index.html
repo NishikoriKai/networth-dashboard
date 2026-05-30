@@ -9,6 +9,8 @@
 <title>Nexo</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="shortcut icon" type="image/png" href="icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -840,21 +842,7 @@ input[type=range]::-webkit-slider-thumb {
 <!-- ════ LOGIN ════ -->
 <div id="loginScreen">
   <div class="login-wrap">
-    <div class="login-logo" style="background:transparent;box-shadow:none;padding:0">
-      <svg width="64" height="64" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="512" height="512" rx="112" fill="#1a1a1e"/>
-        <defs>
-          <linearGradient id="lf1" x1="340" y1="100" x2="180" y2="400" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#e8e2d6"/><stop offset="60%" stop-color="#8a8478"/><stop offset="100%" stop-color="#3a3830"/></linearGradient>
-          <linearGradient id="lf2" x1="256" y1="280" x2="200" y2="430" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#c8c2b4"/><stop offset="100%" stop-color="#252320"/></linearGradient>
-          <linearGradient id="le1" x1="300" y1="120" x2="380" y2="280" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
-        </defs>
-        <path d="M256 108 L388 256 L256 290 Z" fill="url(#lf1)"/>
-        <path d="M124 256 L256 290 L256 404 Z" fill="#252320" fill-opacity="0.9"/>
-        <path d="M256 290 L388 256 L256 404 Z" fill="url(#lf2)"/>
-        <path d="M124 256 L256 108 L256 290 Z" fill="#b8b2a4" fill-opacity="0.75"/>
-        <path d="M256 108 L388 256" stroke="url(#le1)" stroke-width="2.5" stroke-linecap="round"/>
-      </svg>
-    </div>
+    <div class="login-logo" style="background:transparent;box-shadow:none;padding:0"><img src="icon.png" width="64" height="64" style="border-radius:14px;display:block"></div>
     <div class="login-title">Nexo</div>
     <div class="login-sub">輸入 PIN 碼繼續</div>
     <div class="pin-dots">
@@ -884,9 +872,10 @@ input[type=range]::-webkit-slider-thumb {
 
   <!-- Desktop sidebar -->
   <div class="sidebar" id="sidebar" style="display:none">
-    <div class="sidebar-brand">
-      <div class="brand-dot"></div>Nexo
-    </div>
+          <div class="sidebar-brand">
+        <img src="icon.png" width="24" height="24" style="border-radius:6px;flex-shrink:0;display:block">
+        Nexo
+      </div>
     <nav class="sidebar-nav">
       <div class="sidebar-item active" onclick="goTab('overview',this)"><span class="sidebar-item-icon">📊</span>總覽</div>
       <div class="sidebar-item" onclick="goTab('detail',this)"><span class="sidebar-item-icon">📋</span>資產明細</div>
@@ -902,7 +891,7 @@ input[type=range]::-webkit-slider-thumb {
     <!-- Mobile topbar -->
     <header class="topbar" id="topbar">
       <div class="topbar-brand">
-        <svg width="20" height="20" viewBox="0 0 512 512" fill="none" style="border-radius:5px;flex-shrink:0"><rect width="512" height="512" rx="112" fill="#1a1a1e"/><defs><linearGradient id="tb1" x1="340" y1="100" x2="180" y2="400" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#e8e2d6"/><stop offset="100%" stop-color="#3a3830"/></linearGradient></defs><path d="M256 108 L388 256 L256 290 Z" fill="url(#tb1)"/><path d="M124 256 L256 290 L256 404 Z" fill="#252320" fill-opacity="0.9"/><path d="M256 290 L388 256 L256 404 Z" fill="#b8b2a4" fill-opacity="0.7"/><path d="M124 256 L256 108 L256 290 Z" fill="#b8b2a4" fill-opacity="0.6"/></svg>
+        <img src="icon.png" width="22" height="22" style="border-radius:6px;flex-shrink:0;display:block">
         Nexo
       </div>
       <div class="topbar-center">

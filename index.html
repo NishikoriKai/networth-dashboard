@@ -4,10 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" id="themeColor" content="#f2f2f7">
-<title>NETWORTH</title>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" id="themeColor" content="#1a1a1e">
+<title>Nexo</title>
 <link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -467,15 +468,22 @@ input[type=range]::-webkit-slider-thumb {
 ════════════════════════════════ */
 /* Heatmap */
 .heatmap-outer { overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:var(--s1); }
-.heatmap-grid { display:flex; gap:3px; width:max-content; }
-.hm-col { display:flex; flex-direction:column; gap:2px; }
-.hm-mlbl { font-size:9px; color:var(--ink-3); height:12px; display:flex; align-items:center; white-space:nowrap; }
-.hm-cell { width:12px; height:12px; border-radius:2px; background:var(--bg-input); cursor:pointer; transition:transform .1s; flex-shrink:0; }
-.hm-cell:hover { transform:scale(1.4); z-index:5; position:relative; }
-.hm-cell.empty { background:var(--sep); cursor:default; }
-.hm-cell.empty:hover { transform:none; }
+/* 每列 = 一年，每格 = 一筆記錄，橫向排列 */
+.hm-year-block { margin-bottom:var(--s2); }
+.hm-year-label { font-size:11px; font-weight:600; color:var(--ink-3); margin-bottom:6px; }
+.hm-dots-row { display:flex; flex-wrap:wrap; gap:5px; }
+.hm-dot {
+  width:28px; height:28px; border-radius:var(--r-xs);
+  display:flex; align-items:center; justify-content:center;
+  font-size:9px; font-weight:600; color:rgba(255,255,255,.8);
+  cursor:pointer; transition:transform .12s, box-shadow .12s;
+  flex-shrink:0; position:relative;
+}
+.hm-dot:hover { transform:scale(1.15); box-shadow:0 4px 12px rgba(0,0,0,.2); z-index:5; }
+.hm-dot .hm-dot-month { font-size:8px; position:absolute; top:3px; left:0; right:0; text-align:center; opacity:.7; }
+.hm-dot .hm-dot-val { font-size:9px; font-weight:700; }
 .hm-legend { display:flex; align-items:center; gap:6px; margin-top:8px; font-size:11px; color:var(--ink-3); }
-.hm-leg-cell { width:12px; height:12px; border-radius:2px; }
+.hm-leg-cell { width:16px; height:16px; border-radius:4px; }
 
 /* Year summary */
 .ys-stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:var(--s2); }
@@ -832,8 +840,22 @@ input[type=range]::-webkit-slider-thumb {
 <!-- ════ LOGIN ════ -->
 <div id="loginScreen">
   <div class="login-wrap">
-    <div class="login-logo">💰</div>
-    <div class="login-title">NETWORTH</div>
+    <div class="login-logo" style="background:transparent;box-shadow:none;padding:0">
+      <svg width="64" height="64" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="512" height="512" rx="112" fill="#1a1a1e"/>
+        <defs>
+          <linearGradient id="lf1" x1="340" y1="100" x2="180" y2="400" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#e8e2d6"/><stop offset="60%" stop-color="#8a8478"/><stop offset="100%" stop-color="#3a3830"/></linearGradient>
+          <linearGradient id="lf2" x1="256" y1="280" x2="200" y2="430" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#c8c2b4"/><stop offset="100%" stop-color="#252320"/></linearGradient>
+          <linearGradient id="le1" x1="300" y1="120" x2="380" y2="280" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+        </defs>
+        <path d="M256 108 L388 256 L256 290 Z" fill="url(#lf1)"/>
+        <path d="M124 256 L256 290 L256 404 Z" fill="#252320" fill-opacity="0.9"/>
+        <path d="M256 290 L388 256 L256 404 Z" fill="url(#lf2)"/>
+        <path d="M124 256 L256 108 L256 290 Z" fill="#b8b2a4" fill-opacity="0.75"/>
+        <path d="M256 108 L388 256" stroke="url(#le1)" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="login-title">Nexo</div>
     <div class="login-sub">輸入 PIN 碼繼續</div>
     <div class="pin-dots">
       <div class="pin-dot" id="p0"></div><div class="pin-dot" id="p1"></div>
@@ -863,7 +885,7 @@ input[type=range]::-webkit-slider-thumb {
   <!-- Desktop sidebar -->
   <div class="sidebar" id="sidebar" style="display:none">
     <div class="sidebar-brand">
-      <div class="brand-dot"></div>NETWORTH
+      <div class="brand-dot"></div>Nexo
     </div>
     <nav class="sidebar-nav">
       <div class="sidebar-item active" onclick="goTab('overview',this)"><span class="sidebar-item-icon">📊</span>總覽</div>
@@ -879,7 +901,10 @@ input[type=range]::-webkit-slider-thumb {
 
     <!-- Mobile topbar -->
     <header class="topbar" id="topbar">
-      <div class="topbar-brand"><div class="brand-dot"></div>NETWORTH</div>
+      <div class="topbar-brand">
+        <svg width="20" height="20" viewBox="0 0 512 512" fill="none" style="border-radius:5px;flex-shrink:0"><rect width="512" height="512" rx="112" fill="#1a1a1e"/><defs><linearGradient id="tb1" x1="340" y1="100" x2="180" y2="400" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#e8e2d6"/><stop offset="100%" stop-color="#3a3830"/></linearGradient></defs><path d="M256 108 L388 256 L256 290 Z" fill="url(#tb1)"/><path d="M124 256 L256 290 L256 404 Z" fill="#252320" fill-opacity="0.9"/><path d="M256 290 L388 256 L256 404 Z" fill="#b8b2a4" fill-opacity="0.7"/><path d="M124 256 L256 108 L256 290 Z" fill="#b8b2a4" fill-opacity="0.6"/></svg>
+        Nexo
+      </div>
       <div class="topbar-center">
         <div class="date-nav">
           <div class="nav-btn" onclick="shiftDate(-1)">‹</div>
@@ -1861,36 +1886,39 @@ function shiftSummaryYear(d){ summaryYear+=d; renderYearSummary(summaryYear); }
 function renderHeatmap(){
   const grid=document.getElementById('hmGrid'); const leg=document.getElementById('hmLegend');
   if(!grid||!allTrendData.length){if(grid)grid.innerHTML='<div style="font-size:12px;color:var(--ink-3)">尚無資料</div>';return;}
-  const dayMap={};
-  allTrendData.forEach(d=>{dayMap[`${d.year}-${d.month}-${d.day}`]=d.net;});
-  const nets=Object.values(dayMap);
+  const nets=allTrendData.map(d=>d.net);
   const mx=Math.max(...nets),mn=Math.min(...nets);
+  // 5-level color scale
   const levels=darkMode
-    ?['rgba(255,255,255,.06)','rgba(77,159,255,.2)','rgba(77,159,255,.4)','rgba(77,159,255,.65)','rgba(77,159,255,.9)']
-    :['rgba(0,0,0,.05)','rgba(37,99,235,.15)','rgba(37,99,235,.35)','rgba(37,99,235,.6)','rgba(37,99,235,.85)'];
+    ?['#1e2a3a','#1a4a7a','#1a6ab8','#2080d8','#3b9eff']
+    :['#dbeafe','#93c5fd','#3b82f6','#1d4ed8','#1e3a8a'];
   function lv(net){return Math.min(4,Math.floor((net-mn)/(mx-mn||1)*5));}
-  const months={};
-  allTrendData.forEach(d=>{const k=`${d.year}-${String(d.month).padStart(2,'0')}`;if(!months[k])months[k]=[];months[k].push(d);});
+  // Group by year
+  const byYear={};
+  allTrendData.forEach(d=>{if(!byYear[d.year])byYear[d.year]=[];byYear[d.year].push(d);});
   grid.innerHTML='';
-  Object.keys(months).sort().forEach(mk=>{
-    const[y,m]=mk.split('-').map(Number);
-    const dIM=new Date(y,m,0).getDate();
-    const col=document.createElement('div');col.className='hm-col';
-    const lbl=document.createElement('div');lbl.className='hm-mlbl';lbl.textContent=`${m}月`;col.appendChild(lbl);
-    const mDays=months[mk]; const dnm={};mDays.forEach(d=>dnm[d.day]=d.net);
-    for(let day=1;day<=Math.min(dIM,31);day++){
-      const cell=document.createElement('div');
-      if(dnm[day]!==undefined){
-        cell.className='hm-cell';
-        cell.style.background=levels[lv(dnm[day])];
-        cell.title=`${y}/${m}/${day}: ${(dnm[day]/10000).toFixed(0)}萬`;
-        cell.onclick=()=>jumpToDate(y,m,day);
-      }else cell.className='hm-cell empty';
-      col.appendChild(cell);
-    }
-    grid.appendChild(col);
+  Object.keys(byYear).sort().forEach(year=>{
+    const records=byYear[year];
+    const block=document.createElement('div');block.className='hm-year-block';
+    const ylbl=document.createElement('div');ylbl.className='hm-year-label';ylbl.textContent=year+'年';block.appendChild(ylbl);
+    const row=document.createElement('div');row.className='hm-dots-row';
+    records.forEach(d=>{
+      const dot=document.createElement('div');dot.className='hm-dot';
+      const color=levels[lv(d.net)];
+      dot.style.background=color;
+      dot.title=`${d.year}/${d.month}/${d.day||1}
+${(d.net/10000).toFixed(0)}萬`;
+      dot.onclick=()=>jumpToDate(d.year,d.month,d.day||1);
+      // month label + value
+      const netW=(d.net/10000).toFixed(0);
+      dot.innerHTML=`<span class="hm-dot-month">${d.month}月</span><span class="hm-dot-val">${netW>999?Math.round(netW/100)/10+'千':netW}</span>`;
+      row.appendChild(dot);
+    });
+    block.appendChild(row);
+    grid.appendChild(block);
   });
-  leg.innerHTML=levels.map(c=>`<div class="hm-leg-cell" style="background:${c};border:1px solid var(--sep)"></div>`).join('');
+  // Legend
+  leg.innerHTML=levels.map((c,i)=>`<div class="hm-leg-cell" style="background:${c}"></div>`).join('');
 }
 
 async function renderLog(){
